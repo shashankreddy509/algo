@@ -37,14 +37,17 @@ sudo apt update && sudo apt upgrade -y
 
 #### Install Required Software
 ```bash
-# Install Python 3.11 and pip
-sudo apt install python3.11 python3.11-venv python3-pip -y
+# Update system packages
+sudo apt update && sudo apt upgrade -y
 
-# Install Nginx
-sudo apt install nginx -y
+# Install Python and build dependencies
+sudo apt install -y python3 python3-pip python3-venv python3-dev \
+    build-essential gcc g++ make \
+    libffi-dev libssl-dev \
+    nginx git curl wget htop
 
-# Install Git
-sudo apt install git -y
+# Install additional security tools
+sudo apt install -y ufw fail2ban
 
 # Install supervisor for process management
 sudo apt install supervisor -y

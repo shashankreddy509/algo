@@ -68,8 +68,11 @@ setup_system() {
     # Update system
     apt update && apt upgrade -y
     
-    # Install required packages
-    apt install -y python3 python3-pip python3-venv nginx git curl wget htop
+    # Install required packages including build dependencies
+    apt install -y python3 python3-pip python3-venv python3-dev \
+        build-essential gcc g++ make \
+        libffi-dev libssl-dev \
+        nginx git curl wget htop
     
     # Create ubuntu user if not exists
     if ! id "ubuntu" &>/dev/null; then
