@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Fyers Trading App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-body text-center p-5">
+                <div class="mb-4">
+                    <i class="fas fa-chart-line fa-4x text-primary mb-3"></i>
+                    <h1 class="card-title fw-bold mb-3">Welcome to Fyers Trading</h1>
+                    <p class="card-text text-muted mb-4">
+                        Connect your Fyers account to access real-time market data, 
+                        manage your portfolio, and execute trades seamlessly.
+                    </p>
+                </div>
+
+                {% if not session.access_token %}
+                <div class="d-grid gap-3">
+                    <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        Login with Fyers
+                    </a>
+                    <p class="text-muted small mb-0">
+                        Secure OAuth 2.0 authentication with Fyers API
+                    </p>
+                </div>
+                {% else %}
+                <div class="d-grid gap-3">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-tachometer-alt me-2"></i>
+                        Go to Dashboard
+                    </a>
+                    <p class="text-success small mb-0">
+                        <i class="fas fa-check-circle me-1"></i>
+                        You are already logged in
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-shield-alt fa-2x text-success mb-3"></i>
+                        <h5 class="card-title">Secure</h5>
+                        <p class="card-text small text-muted">OAuth 2.0 authentication ensures your data is protected</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-bolt fa-2x text-warning mb-3"></i>
+                        <h5 class="card-title">Fast</h5>
+                        <p class="card-text small text-muted">Real-time market data and instant trade execution</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-mobile-alt fa-2x text-info mb-3"></i>
+                        <h5 class="card-title">Responsive</h5>
+                        <p class="card-text small text-muted">Works seamlessly on desktop and mobile devices</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

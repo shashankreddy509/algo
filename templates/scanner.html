@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block title %}Scanner - Fyers Trading{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-search me-2"></i>Stock Scanner
+                </h4>
+                <p class="mb-0 mt-2">Find stocks based on technical and fundamental criteria</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scanner Filters -->
+<div class="row">
+    <div class="col-lg-3 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-filter me-2"></i>Filters
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="scannerForm">
+                    <!-- Market Segment -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Market Segment</label>
+                        <select class="form-select" id="segment">
+                            <option value="NSE">NSE</option>
+                            <option value="BSE">BSE</option>
+                            <option value="MCX">MCX</option>
+                        </select>
+                    </div>
+
+                    <!-- Price Range -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Price Range</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="number" class="form-control" id="minPrice" placeholder="Min ₹" min="0" step="0.01">
+                            </div>
+                            <div class="col-6">
+                                <input type="number" class="form-control" id="maxPrice" placeholder="Max ₹" min="0" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Volume -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Min Volume</label>
+                        <input type="number" class="form-control" id="minVolume" placeholder="Min Volume" min="0">
+                    </div>
+
+                    <!-- Market Cap -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Market Cap</label>
+                        <select class="form-select" id="marketCap">
+                            <option value="">All</option>
+                            <option value="large">Large Cap (>20,000 Cr)</option>
+                            <option value="mid">Mid Cap (5,000-20,000 Cr)</option>
+                            <option value="small">Small Cap (<5,000 Cr)</option>
+                        </select>
+                    </div>
+
+                    <!-- Technical Indicators -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Technical Patterns</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="bullishPattern">
+                            <label class="form-check-label" for="bullishPattern">
+                                Bullish Patterns
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="bearishPattern">
+                            <label class="form-check-label" for="bearishPattern">
+                                Bearish Patterns
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="breakoutPattern">
+                            <label class="form-check-label" for="breakoutPattern">
+                                Breakout Patterns
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- RSI Range -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">RSI Range</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="number" class="form-control" id="minRSI" placeholder="Min RSI" min="0" max="100">
+                            </div>
+                            <div class="col-6">
+                                <input type="number" class="form-control" id="maxRSI" placeholder="Max RSI" min="0" max="100">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i>Scan Stocks
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="resetFilters()">
+                            <i class="fas fa-refresh me-1"></i>Reset
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scanner Results -->
+    <div class="col-lg-9 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list me-2"></i>Scan Results
+                </h5>
+                <span id="resultCount" class="badge bg-light text-dark">0 stocks found</span>
+            </div>
+            <div class="card-body">
+                <div id="loadingSpinner" class="text-center d-none">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Scanning stocks...</p>
+                </div>
+
+                <div id="scanResults">
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-search fa-3x mb-3"></i>
+                        <h5>Ready to Scan</h5>
+                        <p>Set your filters and click "Scan Stocks" to find matching securities</p>
+                    </div>
+                </div>
+
+                <!-- Results Table (will be populated by JavaScript) -->
+                <div id="resultsTable" class="d-none">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Price</th>
+                                    <th>Change %</th>
+                                    <th>Volume</th>
+                                    <th>RSI</th>
+                                    <th>Pattern</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody">
+                                <!-- Results will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Scan Presets -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bolt me-2"></i>Quick Scan Presets
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-primary w-100" onclick="applyPreset('momentum')">
+                            <i class="fas fa-rocket me-1"></i>Momentum Stocks
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-success w-100" onclick="applyPreset('oversold')">
+                            <i class="fas fa-arrow-down me-1"></i>Oversold Stocks
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-danger w-100" onclick="applyPreset('overbought')">
+                            <i class="fas fa-arrow-up me-1"></i>Overbought Stocks
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-info w-100" onclick="applyPreset('breakout')">
+                            <i class="fas fa-chart-line me-1"></i>Breakout Stocks
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const scannerForm = document.getElementById('scannerForm');
+    
+    scannerForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        performScan();
+    });
+});
+
+function performScan() {
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const scanResults = document.getElementById('scanResults');
+    const resultsTable = document.getElementById('resultsTable');
+    const resultCount = document.getElementById('resultCount');
+    
+    // Show loading
+    loadingSpinner.classList.remove('d-none');
+    scanResults.classList.add('d-none');
+    resultsTable.classList.add('d-none');
+    
+    // Collect form data
+    const formData = {
+        segment: document.getElementById('segment').value,
+        minPrice: document.getElementById('minPrice').value,
+        maxPrice: document.getElementById('maxPrice').value,
+        minVolume: document.getElementById('minVolume').value,
+        marketCap: document.getElementById('marketCap').value,
+        bullishPattern: document.getElementById('bullishPattern').checked,
+        bearishPattern: document.getElementById('bearishPattern').checked,
+        breakoutPattern: document.getElementById('breakoutPattern').checked,
+        minRSI: document.getElementById('minRSI').value,
+        maxRSI: document.getElementById('maxRSI').value
+    };
+    
+    // Simulate API call (replace with actual Fyers API call)
+    setTimeout(() => {
+        // Mock results for demonstration
+        const mockResults = [
+            { symbol: 'RELIANCE', price: 2456.75, change: 2.34, volume: 1234567, rsi: 65, pattern: 'Bullish' },
+            { symbol: 'TCS', price: 3678.90, change: -1.23, volume: 987654, rsi: 45, pattern: 'Neutral' },
+            { symbol: 'INFY', price: 1543.25, change: 3.45, volume: 2345678, rsi: 72, pattern: 'Breakout' },
+            { symbol: 'HDFC', price: 1678.50, change: 1.89, volume: 1567890, rsi: 58, pattern: 'Bullish' }
+        ];
+        
+        displayResults(mockResults);
+        loadingSpinner.classList.add('d-none');
+    }, 2000);
+}
+
+function displayResults(results) {
+    const resultsTable = document.getElementById('resultsTable');
+    const resultsBody = document.getElementById('resultsBody');
+    const resultCount = document.getElementById('resultCount');
+    
+    resultCount.textContent = `${results.length} stocks found`;
+    
+    // Clear previous results
+    resultsBody.innerHTML = '';
+    
+    // Populate results
+    results.forEach(stock => {
+        const row = document.createElement('tr');
+        const changeClass = stock.change >= 0 ? 'text-success' : 'text-danger';
+        const changeIcon = stock.change >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+        
+        row.innerHTML = `
+            <td><strong>${stock.symbol}</strong></td>
+            <td>₹${stock.price.toFixed(2)}</td>
+            <td class="${changeClass}">
+                <i class="fas ${changeIcon} me-1"></i>${stock.change.toFixed(2)}%
+            </td>
+            <td>${stock.volume.toLocaleString()}</td>
+            <td>${stock.rsi}</td>
+            <td><span class="badge bg-info">${stock.pattern}</span></td>
+            <td>
+                <button class="btn btn-sm btn-primary" onclick="viewChart('${stock.symbol}')">
+                    <i class="fas fa-chart-line me-1"></i>Chart
+                </button>
+            </td>
+        `;
+        resultsBody.appendChild(row);
+    });
+    
+    resultsTable.classList.remove('d-none');
+}
+
+function resetFilters() {
+    document.getElementById('scannerForm').reset();
+    document.getElementById('scanResults').innerHTML = `
+        <div class="text-center text-muted py-5">
+            <i class="fas fa-search fa-3x mb-3"></i>
+            <h5>Ready to Scan</h5>
+            <p>Set your filters and click "Scan Stocks" to find matching securities</p>
+        </div>
+    `;
+    document.getElementById('resultsTable').classList.add('d-none');
+    document.getElementById('resultCount').textContent = '0 stocks found';
+}
+
+function applyPreset(presetType) {
+    resetFilters();
+    
+    switch(presetType) {
+        case 'momentum':
+            document.getElementById('minVolume').value = '100000';
+            document.getElementById('minRSI').value = '60';
+            document.getElementById('maxRSI').value = '80';
+            document.getElementById('bullishPattern').checked = true;
+            break;
+        case 'oversold':
+            document.getElementById('maxRSI').value = '30';
+            break;
+        case 'overbought':
+            document.getElementById('minRSI').value = '70';
+            break;
+        case 'breakout':
+            document.getElementById('minVolume').value = '200000';
+            document.getElementById('breakoutPattern').checked = true;
+            break;
+    }
+    
+    // Auto-run scan after applying preset
+    performScan();
+}
+
+function viewChart(symbol) {
+    alert(`Chart view for ${symbol} - Feature coming soon!`);
+}
+</script>
+{% endblock %}

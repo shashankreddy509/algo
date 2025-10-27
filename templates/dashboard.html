@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Fyers Trading App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="text-white fw-bold">
+                <i class="fas fa-tachometer-alt me-2"></i>Trading Dashboard
+            </h2>
+            <div class="text-white">
+                <small><i class="fas fa-clock me-1"></i>Last updated: <span id="lastUpdated"></span></small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Profile Information -->
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user me-2"></i>Profile Information
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if profile and profile.get('code') == 200 %}
+                <div class="profile-info">
+                    <div class="mb-3">
+                        <strong>Name:</strong>
+                        <span class="text-muted">{{ profile.get('data', {}).get('name', 'N/A') }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Email:</strong>
+                        <span class="text-muted">{{ profile.get('data', {}).get('email_id', 'N/A') }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Mobile:</strong>
+                        <span class="text-muted">{{ profile.get('data', {}).get('mobile_number', 'N/A') }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>PAN:</strong>
+                        <span class="text-muted">{{ profile.get('data', {}).get('PAN', 'N/A') }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Client ID:</strong>
+                        <span class="text-muted">{{ profile.get('data', {}).get('fy_id', 'N/A') }}</span>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                    <p>Unable to load profile information</p>
+                    <button class="btn btn-sm btn-outline-primary" onclick="refreshProfile()">
+                        <i class="fas fa-refresh me-1"></i>Retry
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Funds Information -->
+    <div class="col-lg-8 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-wallet me-2"></i>Funds & Margin
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if funds and funds.get('code') == 200 %}
+                <div class="row">
+                    {% for fund_item in funds.get('fund_limit', []) %}
+                        {% if fund_item.get('title') == 'Available Balance' %}
+                        <div class="col-md-6 mb-3">
+                            <div class="bg-light p-3 rounded">
+                                <h6 class="text-primary mb-2">
+                                    <i class="fas fa-coins me-1"></i>Available Balance (Equity)
+                                </h6>
+                                <h4 class="mb-0 text-success">
+                                    ₹{{ "%.2f"|format(fund_item.get('equityAmount', 0)|float) }}
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="bg-light p-3 rounded">
+                                <h6 class="text-primary mb-2">
+                                    <i class="fas fa-chart-pie me-1"></i>Available Balance (Commodity)
+                                </h6>
+                                <h4 class="mb-0 text-warning">
+                                    ₹{{ "%.2f"|format(fund_item.get('commodityAmount', 0)|float) }}
+                                </h4>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% for fund_item in funds.get('fund_limit', []) %}
+                        {% if fund_item.get('title') == 'Limit at start of the day' %}
+                        <div class="col-md-6 mb-3">
+                            <div class="bg-light p-3 rounded">
+                                <h6 class="text-primary mb-2">
+                                    <i class="fas fa-piggy-bank me-1"></i>Start Day Balance (Equity)
+                                </h6>
+                                <h4 class="mb-0 text-info">
+                                    ₹{{ "%.2f"|format(fund_item.get('equityAmount', 0)|float) }}
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="bg-light p-3 rounded">
+                                <h6 class="text-primary mb-2">
+                                    <i class="fas fa-exchange-alt me-1"></i>Start Day Balance (Commodity)
+                                </h6>
+                                <h4 class="mb-0 text-primary">
+                                    ₹{{ "%.2f"|format(fund_item.get('commodityAmount', 0)|float) }}
+                                </h4>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                    <p>Unable to load funds information</p>
+                    <button class="btn btn-sm btn-outline-success" onclick="refreshFunds()">
+                        <i class="fas fa-refresh me-1"></i>Retry
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-primary w-100" onclick="refreshData()">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh Data
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-success w-100" onclick="viewPositions()">
+                            <i class="fas fa-list me-1"></i>View Positions
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-warning w-100" onclick="viewOrders()">
+                            <i class="fas fa-shopping-cart me-1"></i>View Orders
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-info w-100" onclick="viewHoldings()">
+                            <i class="fas fa-briefcase me-1"></i>View Holdings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Update last updated time
+    document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+
+    // Refresh functions
+    function refreshProfile() {
+        fetch('/api/profile')
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 200) {
+                    location.reload();
+                } else {
+                    alert('Failed to refresh profile data');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error refreshing profile data');
+            });
+    }
+
+    function refreshFunds() {
+        fetch('/api/funds')
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 200) {
+                    location.reload();
+                } else {
+                    alert('Failed to refresh funds data');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error refreshing funds data');
+            });
+    }
+
+    function refreshData() {
+        location.reload();
+    }
+
+    function viewPositions() {
+        alert('Positions feature coming soon!');
+    }
+
+    function viewOrders() {
+        alert('Orders feature coming soon!');
+    }
+
+    function viewHoldings() {
+        alert('Holdings feature coming soon!');
+    }
+
+    // Auto-refresh every 30 seconds
+    setInterval(function() {
+        document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+    }, 30000);
+</script>
+{% endblock %}
