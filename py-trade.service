@@ -1,0 +1,37 @@
+[Unit]
+Description=Python Trading Application
+Documentation=https://github.com/your-username/py-trade
+After=network.target
+Wants=network.target
+
+[Service]
+Type=exec
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/py-trade
+Environment=PATH=/home/ubuntu/py-trade/venv/bin
+Environment=PYTHONPATH=/home/ubuntu/py-trade
+ExecStart=/home/ubuntu/py-trade/venv/bin/gunicorn --config gunicorn.conf.py app:app
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+Restart=always
+RestartSec=3
+
+# Security settings
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/home/ubuntu/py-trade
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target
