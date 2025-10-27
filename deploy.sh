@@ -155,7 +155,10 @@ import requests
 import fyers_apiv3
 print('✅ All critical packages imported successfully')
 print('Flask version:', flask.__version__)
-print('Fyers API version:', fyers_apiv3.__version__)
+try:
+    print('Fyers API version:', fyers_apiv3.__version__)
+except AttributeError:
+    print('Fyers API: version info not available (package imported successfully)')
 " || {
         print_error "Package verification failed"
         exit 1
