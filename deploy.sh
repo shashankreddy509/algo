@@ -68,8 +68,8 @@ setup_system() {
     # Update system
     apt update && apt upgrade -y
     
-    # Install required packages including build dependencies
-    apt install -y python3 python3-pip python3-venv python3-dev \
+    # Install required packages including build dependencies and python3-full
+    apt install -y python3 python3-pip python3-venv python3-dev python3-full \
         build-essential gcc g++ make \
         libffi-dev libssl-dev \
         nginx git curl wget htop
@@ -109,26 +109,26 @@ deploy_app() {
     # Activate virtual environment
     source "$VENV_DIR/bin/activate"
     
-    # Upgrade pip
-    pip install --upgrade pip
+    # Upgrade pip within virtual environment
+    "$VENV_DIR/bin/pip" install --upgrade pip
     
     # Install dependencies with error handling
     if [ -f "requirements.txt" ]; then
-        print_status "Installing Python dependencies..."
+        print_status "Installing Python dependencies in virtual environment..."
         
-        # First, upgrade pip and build tools
-        pip install --upgrade pip setuptools wheel
+        # First, upgrade pip and build tools in venv
+        "$VENV_DIR/bin/pip" install --upgrade pip setuptools wheel
         
         # Try installing with pre-compiled wheels first
         print_status "Attempting installation with pre-compiled wheels..."
-        if ! pip install --only-binary=:all: -r requirements.txt 2>/dev/null; then
+        if ! "$VENV_DIR/bin/pip" install --only-binary=:all: -r requirements.txt 2>/dev/null; then
             print_warning "Pre-compiled wheels failed, installing with compilation..."
             
-            # Install build dependencies if not already installed
+            # Install build dependencies if not already installed (system-wide)
             apt install -y python3-dev build-essential libffi-dev libssl-dev
             
-            # Try with no cache to avoid corrupted cache issues
-            pip install --no-cache-dir -r requirements.txt
+            # Try with no cache to avoid corrupted cache issues (in venv)
+            "$VENV_DIR/bin/pip" install --no-cache-dir -r requirements.txt
         fi
     else
         print_error "requirements.txt not found!"
@@ -210,8 +210,8 @@ update_app() {
     # Update dependencies
     cd "$APP_DIR"
     source "$VENV_DIR/bin/activate"
-    pip install --upgrade pip
-    pip install -r requirements.txt
+    "$VENV_DIR/bin/pip" install --upgrade pip
+    "$VENV_DIR/bin/pip" install -r requirements.txt
     
     # Restart service
     sudo systemctl start "$SERVICE_NAME"

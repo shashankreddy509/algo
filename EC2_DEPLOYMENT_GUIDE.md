@@ -40,8 +40,8 @@ sudo apt update && sudo apt upgrade -y
 # Update system packages
 sudo apt update && sudo apt upgrade -y
 
-# Install Python and build dependencies
-sudo apt install -y python3 python3-pip python3-venv python3-dev \
+# Install Python and build dependencies (including python3-full for virtual environments)
+sudo apt install -y python3 python3-pip python3-venv python3-dev python3-full \
     build-essential gcc g++ make \
     libffi-dev libssl-dev \
     nginx git curl wget htop

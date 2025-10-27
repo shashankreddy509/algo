@@ -41,9 +41,10 @@ print_header "Fixing Python Build Dependencies"
 print_status "Updating package lists..."
 apt update
 
-# Install comprehensive build dependencies
+# Install comprehensive build dependencies including python3-full
 print_status "Installing build dependencies..."
 apt install -y \
+    python3-full \
     python3-dev \
     python3-pip \
     python3-venv \
@@ -70,9 +71,14 @@ apt install -y \
     libxmlsec1-dev \
     liblzma-dev
 
-# Upgrade pip, setuptools, and wheel
-print_status "Upgrading pip, setuptools, and wheel..."
-python3 -m pip install --upgrade pip setuptools wheel
+# Create a test virtual environment to verify setup
+print_status "Creating test virtual environment..."
+python3 -m venv /tmp/test_venv
+source /tmp/test_venv/bin/activate
+
+# Upgrade pip, setuptools, and wheel in virtual environment
+print_status "Upgrading pip, setuptools, and wheel in virtual environment..."
+/tmp/test_venv/bin/pip install --upgrade pip setuptools wheel
 
 # Install Rust (sometimes needed for newer Python packages)
 print_status "Installing Rust compiler (for some modern Python packages)..."
@@ -80,8 +86,8 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 source ~/.cargo/env || true
 
 # Alternative: Install pre-compiled wheels if available
-print_status "Attempting to install aiohttp with pre-compiled wheels..."
-python3 -m pip install --only-binary=all aiohttp || {
+print_status "Attempting to install aiohttp with pre-compiled wheels in test environment..."
+/tmp/test_venv/bin/pip install --only-binary=all aiohttp || {
     print_warning "Pre-compiled wheels not available, will compile from source"
 }
 
@@ -99,14 +105,18 @@ gcc --version | head -1
 python3 --version
 pip3 --version
 
-print_status "Testing aiohttp installation..."
-python3 -c "
+print_status "Testing aiohttp installation in virtual environment..."
+/tmp/test_venv/bin/python -c "
 try:
     import aiohttp
-    print('✅ aiohttp is already installed and working')
+    print('✅ aiohttp is installed and working in virtual environment')
 except ImportError:
     print('❌ aiohttp not installed, but build environment is ready')
 "
+
+# Clean up test environment
+deactivate 2>/dev/null || true
+rm -rf /tmp/test_venv
 
 print_header "Next Steps"
 print_status "Build dependencies are now installed. Try installing your requirements:"
