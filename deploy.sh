@@ -100,40 +100,66 @@ deploy_app() {
     mkdir -p "$APP_DIR"
     cd "$APP_DIR"
     
-    # Setup virtual environment
-    if [ ! -d "$VENV_DIR" ]; then
-        print_status "Creating virtual environment..."
-        python3 -m venv "$VENV_DIR"
-    fi
-    
-    # Activate virtual environment
+    # Create virtual environment and install dependencies with multiple strategies
+    print_status "Creating virtual environment..."
+    python3 -m venv "$VENV_DIR"
     source "$VENV_DIR/bin/activate"
     
-    # Upgrade pip within virtual environment
-    "$VENV_DIR/bin/pip" install --upgrade pip
+    # Upgrade pip and build tools first
+    print_status "Upgrading pip and build tools..."
+    "$VENV_DIR/bin/pip" install --upgrade pip setuptools wheel
     
-    # Install dependencies with error handling
-    if [ -f "requirements.txt" ]; then
-        print_status "Installing Python dependencies in virtual environment..."
-        
-        # First, upgrade pip and build tools in venv
-        "$VENV_DIR/bin/pip" install --upgrade pip setuptools wheel
-        
-        # Try installing with pre-compiled wheels first
-        print_status "Attempting installation with pre-compiled wheels..."
-        if ! "$VENV_DIR/bin/pip" install --only-binary=:all: -r requirements.txt 2>/dev/null; then
-            print_warning "Pre-compiled wheels failed, installing with compilation..."
-            
-            # Install build dependencies if not already installed (system-wide)
-            apt install -y python3-dev build-essential libffi-dev libssl-dev
-            
-            # Try with no cache to avoid corrupted cache issues (in venv)
-            "$VENV_DIR/bin/pip" install --no-cache-dir -r requirements.txt
-        fi
+    # Multi-stage installation strategy for problematic packages
+    print_status "Installing Python dependencies with fallback strategies..."
+    
+    # Strategy 1: Try installing with pre-compiled wheels first
+    print_status "Attempting installation with pre-compiled wheels..."
+    if "$VENV_DIR/bin/pip" install --only-binary=all -r requirements.txt 2>/dev/null; then
+        print_status "Installation successful with pre-compiled wheels"
     else
-        print_error "requirements.txt not found!"
-        exit 1
+        print_warning "Pre-compiled wheels failed, trying alternative strategies..."
+        
+        # Strategy 2: Install build tools and try again
+        print_status "Installing additional build dependencies..."
+        apt install -y python3-dev build-essential libffi-dev libssl-dev gcc g++ make cmake
+        
+        # Strategy 3: Install core dependencies first, then problematic ones
+        print_status "Installing core dependencies first..."
+        "$VENV_DIR/bin/pip" install Flask requests python-dotenv Werkzeug gunicorn
+        
+        # Strategy 4: Try installing fyers-apiv3 with older aiohttp
+        print_status "Attempting fyers-apiv3 with older aiohttp version..."
+        if ! "$VENV_DIR/bin/pip" install 'aiohttp==3.8.6' fyers-apiv3 2>/dev/null; then
+            print_warning "Older aiohttp failed, trying dependency separation..."
+            
+            # Strategy 5: Install aiohttp dependencies separately
+            "$VENV_DIR/bin/pip" install yarl multidict async-timeout aiosignal frozenlist attrs
+            
+            # Try installing aiohttp and fyers-apiv3 separately
+            if "$VENV_DIR/bin/pip" install --no-cache-dir aiohttp 2>/dev/null; then
+                print_status "aiohttp installed from source"
+                "$VENV_DIR/bin/pip" install fyers-apiv3
+            else
+                print_error "All installation strategies failed"
+                print_status "Run the advanced fix script: sudo ./fix-aiohttp-advanced.sh"
+                exit 1
+            fi
+        fi
     fi
+    
+    # Verify critical imports
+    print_status "Verifying installations..."
+    "$VENV_DIR/bin/python" -c "
+import flask
+import requests
+import fyers_apiv3
+print('✅ All critical packages imported successfully')
+print('Flask version:', flask.__version__)
+print('Fyers API version:', fyers_apiv3.__version__)
+" || {
+        print_error "Package verification failed"
+        exit 1
+    }
     
     # Set permissions
     chown -R ubuntu:ubuntu "$APP_DIR"
