@@ -112,10 +112,24 @@ deploy_app() {
     # Upgrade pip
     pip install --upgrade pip
     
-    # Install dependencies
+    # Install dependencies with error handling
     if [ -f "requirements.txt" ]; then
         print_status "Installing Python dependencies..."
-        pip install -r requirements.txt
+        
+        # First, upgrade pip and build tools
+        pip install --upgrade pip setuptools wheel
+        
+        # Try installing with pre-compiled wheels first
+        print_status "Attempting installation with pre-compiled wheels..."
+        if ! pip install --only-binary=:all: -r requirements.txt 2>/dev/null; then
+            print_warning "Pre-compiled wheels failed, installing with compilation..."
+            
+            # Install build dependencies if not already installed
+            apt install -y python3-dev build-essential libffi-dev libssl-dev
+            
+            # Try with no cache to avoid corrupted cache issues
+            pip install --no-cache-dir -r requirements.txt
+        fi
     else
         print_error "requirements.txt not found!"
         exit 1

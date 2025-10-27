@@ -1,6 +1,23 @@
+# Core application dependencies
 Flask==2.3.3
 requests==2.31.0
 python-dotenv==1.0.0
-fyers-apiv3==3.0.6
 Werkzeug==2.3.7
 gunicorn==21.2.0
+
+# Fyers API - may require build dependencies for aiohttp
+fyers-apiv3==3.0.6
+
+# Build tools and wheel support
+setuptools>=65.0.0
+wheel>=0.37.0
+
+# Alternative: If aiohttp build fails, try these options:
+# Option 1: Use pre-compiled binary wheels only
+# --only-binary=aiohttp
+
+# Option 2: Use older stable version
+# aiohttp==3.8.6
+
+# Option 3: Install aiohttp separately with specific flags
+# pip install --no-cache-dir aiohttp
