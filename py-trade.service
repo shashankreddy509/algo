@@ -8,10 +8,10 @@ Wants=network.target
 Type=exec
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/home/ubuntu/py-trade
-Environment=PATH=/home/ubuntu/py-trade/venv/bin
-Environment=PYTHONPATH=/home/ubuntu/py-trade
-ExecStart=/home/ubuntu/py-trade/venv/bin/gunicorn --config gunicorn.conf.py app:app
+WorkingDirectory=/opt/py-trade
+Environment=PATH=/opt/py-trade/venv/bin
+Environment=PYTHONPATH=/opt/py-trade
+ExecStart=/opt/py-trade/venv/bin/gunicorn --config gunicorn.conf.py app:app
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
 TimeoutStopSec=5
@@ -23,7 +23,7 @@ RestartSec=3
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
-ReadWritePaths=/home/ubuntu/py-trade
+ReadWritePaths=/opt/py-trade
 PrivateDevices=yes
 ProtectKernelTunables=yes
 ProtectKernelModules=yes
