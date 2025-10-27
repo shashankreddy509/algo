@@ -21,9 +21,9 @@ max_requests_jitter = 100
 # Load application code before the worker processes are forked
 preload_app = True
 
-# Logging
-accesslog = "/var/log/gunicorn/access.log"
-errorlog = "/var/log/gunicorn/error.log"
+# Logging - Use stdout/stderr instead of files to avoid permission issues
+accesslog = "-"  # stdout
+errorlog = "-"   # stderr
 loglevel = "info"
 access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %(D)s'
 
