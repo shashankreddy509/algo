@@ -4,7 +4,7 @@ Werkzeug==3.0.1
 
 # API and HTTP clients
 requests==2.31.0
-fyers-apiv3==3.1.7
+fyers-apiv3>=3.1.0,<4.0.0
 
 # Environment and configuration
 python-dotenv==1.0.0
