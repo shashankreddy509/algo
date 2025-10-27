@@ -1,49 +1,70 @@
 # Troubleshooting Guide
 
-## 🔧 Common Issues and Solutions
+## Common Deployment Issues
 
 ### 1. aiohttp Build Failures
 
-**Error Messages:**
-```
-ERROR: Failed building wheel for aiohttp
-× Failed to build installable wheels for some pyproject.toml based projects
-error: command '/usr/bin/x86_64-linux-gnu-gcc' failed with exit code 1
-```
+The most common issue is `aiohttp` compilation failure. Here are multiple solutions:
 
-**Solutions (try in order):**
-
-#### Option A: Use the Fix Script
+#### Solution A: Use the Fix Script (Recommended)
 ```bash
 sudo chmod +x fix-dependencies.sh
 sudo ./fix-dependencies.sh
 ```
 
-#### Option B: Manual Build Dependencies
+#### Solution B: Manual Build Dependencies
 ```bash
 sudo apt update
-sudo apt install -y python3-dev build-essential gcc g++ make \
-    libffi-dev libssl-dev pkg-config cmake
-pip install --upgrade pip setuptools wheel
+sudo apt install -y python3-full python3-dev build-essential \
+    libffi-dev libssl-dev gcc g++ make cmake pkg-config
 ```
 
-#### Option C: Use Pre-compiled Wheels Only
+#### Solution C: Use Pre-compiled Wheels
 ```bash
-pip install --only-binary=:all: -r requirements.txt
+# In your virtual environment
+pip install --only-binary=all aiohttp
 ```
 
-#### Option D: Install Without Cache
+#### Solution D: No Cache Installation
 ```bash
-pip install --no-cache-dir -r requirements.txt
+pip install --no-cache-dir aiohttp
 ```
 
-#### Option E: Use Older aiohttp Version
+#### Solution E: Use Older Version
 ```bash
-pip install 'aiohttp==3.8.6'
-pip install fyers-apiv3
+pip install 'aiohttp<4.0.0'
 ```
 
-### 2. Memory Issues During Installation
+### 2. Externally Managed Environment Error
+
+If you see "externally-managed-environment" error:
+
+```bash
+# Install python3-full package
+sudo apt install python3-full
+
+# Always use virtual environments (already handled in deploy.sh)
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 3. Verification Before Deployment
+
+Before running the main deployment, verify your setup:
+
+```bash
+chmod +x verify-setup.sh
+./verify-setup.sh
+```
+
+This script will test:
+- Python installation and virtual environment creation
+- Build tools and development libraries
+- aiohttp and fyers-apiv3 installation
+- Project file presence
+
+### 4. Memory Issues During Installation
 
 **Error:** `MemoryError` or `Killed` during pip install
 
