@@ -103,6 +103,53 @@
                         </div>
                     </div>
 
+                    <!-- One Hour Setup Strategy -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="oneHourSetup">
+                            <label class="form-check-label fw-bold text-primary" for="oneHourSetup">
+                                <i class="fas fa-clock me-1"></i>One Hour Setup Strategy
+                            </label>
+                        </div>
+                        
+                        <div id="oneHourFilters" class="mt-2 d-none">
+                            <!-- Previous Day Close -->
+                            <div class="mb-2">
+                                <label class="form-label small">Previous Day Close</label>
+                                <select class="form-select form-select-sm" id="prevDayClose">
+                                    <option value="">Any</option>
+                                    <option value="strong_bullish">Strong Bullish</option>
+                                    <option value="strong_bearish">Strong Bearish</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Flat Opening -->
+                            <div class="mb-2">
+                                <label class="form-label small">Flat Opening Tolerance</label>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <input type="number" class="form-control form-control-sm" id="stockFlatTolerance" 
+                                               placeholder="Stock %" value="1" step="0.1" min="0" max="5">
+                                        <small class="text-muted">Stock %</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="number" class="form-control form-control-sm" id="indexFlatTolerance" 
+                                               placeholder="Index pts" value="30" step="5" min="0" max="200">
+                                        <small class="text-muted">Index pts</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- High Liquidity Filter -->
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="highLiquidity" checked>
+                                <label class="form-check-label small" for="highLiquidity">
+                                    High Liquidity (Nifty 50/F&O)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Buttons -->
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">
@@ -124,7 +171,12 @@
                 <h5 class="card-title mb-0">
                     <i class="fas fa-list me-2"></i>Scan Results
                 </h5>
-                <span id="resultCount" class="badge bg-light text-dark">0 stocks found</span>
+                <div class="d-flex align-items-center gap-2">
+                    <span id="resultCount" class="badge bg-light text-dark">0 stocks found</span>
+                    <button id="downloadCsvBtn" class="btn btn-sm btn-outline-light d-none" onclick="downloadCSV()" title="Download results as CSV">
+                        <i class="fas fa-download me-1"></i>CSV
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 <div id="loadingSpinner" class="text-center d-none">
@@ -179,24 +231,34 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-3 mb-2">
+                    <div class="col-md-2 mb-2">
                         <button class="btn btn-outline-primary w-100" onclick="applyPreset('momentum')">
                             <i class="fas fa-rocket me-1"></i>Momentum Stocks
                         </button>
                     </div>
-                    <div class="col-md-3 mb-2">
+                    <div class="col-md-2 mb-2">
                         <button class="btn btn-outline-success w-100" onclick="applyPreset('oversold')">
                             <i class="fas fa-arrow-down me-1"></i>Oversold Stocks
                         </button>
                     </div>
-                    <div class="col-md-3 mb-2">
+                    <div class="col-md-2 mb-2">
                         <button class="btn btn-outline-danger w-100" onclick="applyPreset('overbought')">
                             <i class="fas fa-arrow-up me-1"></i>Overbought Stocks
                         </button>
                     </div>
-                    <div class="col-md-3 mb-2">
+                    <div class="col-md-2 mb-2">
                         <button class="btn btn-outline-info w-100" onclick="applyPreset('breakout')">
                             <i class="fas fa-chart-line me-1"></i>Breakout Stocks
+                        </button>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <button class="btn btn-outline-warning w-100" onclick="applyPreset('oneHourSetup')">
+                            <i class="fas fa-clock me-1"></i>One Hour Setup
+                        </button>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <button class="btn btn-outline-secondary w-100" onclick="showPaperTrading()">
+                            <i class="fas fa-chart-area me-1"></i>Paper Trading
                         </button>
                     </div>
                 </div>
@@ -208,6 +270,17 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const scannerForm = document.getElementById('scannerForm');
+    const oneHourSetup = document.getElementById('oneHourSetup');
+    const oneHourFilters = document.getElementById('oneHourFilters');
+    
+    // Toggle One Hour Setup filters
+    oneHourSetup.addEventListener('change', function() {
+        if (this.checked) {
+            oneHourFilters.classList.remove('d-none');
+        } else {
+            oneHourFilters.classList.add('d-none');
+        }
+    });
     
     scannerForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -237,30 +310,142 @@ function performScan() {
         bearishPattern: document.getElementById('bearishPattern').checked,
         breakoutPattern: document.getElementById('breakoutPattern').checked,
         minRSI: document.getElementById('minRSI').value,
-        maxRSI: document.getElementById('maxRSI').value
+        maxRSI: document.getElementById('maxRSI').value,
+        oneHourSetup: document.getElementById('oneHourSetup').checked,
+        prevDayClose: document.getElementById('prevDayClose')?.value || '',
+        stockFlatTolerance: document.getElementById('stockFlatTolerance')?.value || 1,
+        indexFlatTolerance: document.getElementById('indexFlatTolerance')?.value || 30,
+        highLiquidity: document.getElementById('highLiquidity')?.checked || false
     };
     
-    // Simulate API call (replace with actual Fyers API call)
-    setTimeout(() => {
-        // Mock results for demonstration
-        const mockResults = [
-            { symbol: 'RELIANCE', price: 2456.75, change: 2.34, volume: 1234567, rsi: 65, pattern: 'Bullish' },
-            { symbol: 'TCS', price: 3678.90, change: -1.23, volume: 987654, rsi: 45, pattern: 'Neutral' },
-            { symbol: 'INFY', price: 1543.25, change: 3.45, volume: 2345678, rsi: 72, pattern: 'Breakout' },
-            { symbol: 'HDFC', price: 1678.50, change: 1.89, volume: 1567890, rsi: 58, pattern: 'Bullish' }
-        ];
+    // Store scan data for CSV export
+    currentScanData = formData;
+    
+    // Make real API call to backend scanner endpoint
+    fetch('/api/scanner', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            console.error('Scanner error:', data.error);
+            alert('Scanner error: ' + data.error);
+            loadingSpinner.classList.add('d-none');
+            return;
+        }
         
-        displayResults(mockResults);
+        displayResults(data.results || [], formData.oneHourSetup);
         loadingSpinner.classList.add('d-none');
-    }, 2000);
+        
+        // Show CSV download button if results exist
+        const downloadBtn = document.getElementById('downloadCsvBtn');
+        if (data.results && data.results.length > 0) {
+            downloadBtn.classList.remove('d-none');
+        } else {
+            downloadBtn.classList.add('d-none');
+        }
+    })
+    .catch(error => {
+        console.error('Scanner request failed:', error);
+        alert('Scanner request failed. Please try again.');
+        loadingSpinner.classList.add('d-none');
+    });
 }
 
-function displayResults(results) {
+// Global variable to store current scan data for CSV export
+let currentScanData = null;
+
+function downloadCSV() {
+    if (!currentScanData) {
+        alert('No scan data available. Please run a scan first.');
+        return;
+    }
+    
+    // Show loading state
+    const downloadBtn = document.getElementById('downloadCsvBtn');
+    const originalText = downloadBtn.innerHTML;
+    downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Downloading...';
+    downloadBtn.disabled = true;
+    
+    // Make API call to export CSV
+    fetch('/api/scanner/export-csv', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(currentScanData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('CSV export failed');
+        }
+        return response.blob();
+    })
+    .then(blob => {
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        
+        // Get filename from response headers or generate one
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+        const scanType = currentScanData.oneHourSetup ? 'OneHourSetup' : 'RegularScan';
+        a.download = `scanner_results_${scanType}_${timestamp}.csv`;
+        
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        // Reset button state
+        downloadBtn.innerHTML = originalText;
+        downloadBtn.disabled = false;
+    })
+    .catch(error => {
+        console.error('CSV download failed:', error);
+        alert('CSV download failed. Please try again.');
+        
+        // Reset button state
+        downloadBtn.innerHTML = originalText;
+        downloadBtn.disabled = false;
+    });
+}
+
+function displayResults(results, isOneHourSetup = false) {
     const resultsTable = document.getElementById('resultsTable');
     const resultsBody = document.getElementById('resultsBody');
     const resultCount = document.getElementById('resultCount');
+    const tableHead = resultsTable.querySelector('thead tr');
     
     resultCount.textContent = `${results.length} stocks found`;
+    
+    // Update table headers for One Hour Setup
+    if (isOneHourSetup) {
+        tableHead.innerHTML = `
+            <th>Symbol</th>
+            <th>Price</th>
+            <th>Change %</th>
+            <th>Volume</th>
+            <th>Prev Close</th>
+            <th>Signal</th>
+            <th>Action</th>
+        `;
+    } else {
+        tableHead.innerHTML = `
+            <th>Symbol</th>
+            <th>Price</th>
+            <th>Change %</th>
+            <th>Volume</th>
+            <th>RSI</th>
+            <th>Pattern</th>
+            <th>Action</th>
+        `;
+    }
     
     // Clear previous results
     resultsBody.innerHTML = '';
@@ -271,21 +456,46 @@ function displayResults(results) {
         const changeClass = stock.change >= 0 ? 'text-success' : 'text-danger';
         const changeIcon = stock.change >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
         
-        row.innerHTML = `
-            <td><strong>${stock.symbol}</strong></td>
-            <td>₹${stock.price.toFixed(2)}</td>
-            <td class="${changeClass}">
-                <i class="fas ${changeIcon} me-1"></i>${stock.change.toFixed(2)}%
-            </td>
-            <td>${stock.volume.toLocaleString()}</td>
-            <td>${stock.rsi}</td>
-            <td><span class="badge bg-info">${stock.pattern}</span></td>
-            <td>
-                <button class="btn btn-sm btn-primary" onclick="viewChart('${stock.symbol}')">
-                    <i class="fas fa-chart-line me-1"></i>Chart
-                </button>
-            </td>
-        `;
+        if (isOneHourSetup) {
+            const signalClass = stock.signal === 'Setup Ready' ? 'bg-success' : 'bg-warning';
+            // Determine prevClose color based on bullish/bearish
+            const prevCloseClass = stock.prevClose.includes('Bullish') ? 'bg-success' : 
+                                  stock.prevClose.includes('Bearish') ? 'bg-danger' : 'bg-info';
+            row.innerHTML = `
+                <td><strong>${stock.symbol}</strong></td>
+                <td>Rs.${stock.price.toFixed(2)}</td>
+                <td class="${changeClass}">
+                    <i class="fas ${changeIcon} me-1"></i>${stock.change.toFixed(2)}%
+                </td>
+                <td>${stock.volume.toLocaleString()}</td>
+                <td><span class="badge ${prevCloseClass}">${stock.prevClose}</span></td>
+                <td><span class="badge ${signalClass}">${stock.signal}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-primary me-1" onclick="openChart('${stock.symbol}', 'One Hour Setup')">
+                        <i class="fas fa-chart-line me-1"></i>Chart
+                    </button>
+                    <button class="btn btn-sm btn-success" onclick="executeTrade('${stock.symbol}', '${stock.prevClose}')">
+                        <i class="fas fa-play me-1"></i>Trade
+                    </button>
+                </td>
+            `;
+        } else {
+            row.innerHTML = `
+                <td><strong>${stock.symbol}</strong></td>
+                <td>Rs.${stock.price.toFixed(2)}</td>
+                <td class="${changeClass}">
+                    <i class="fas ${changeIcon} me-1"></i>${stock.change.toFixed(2)}%
+                </td>
+                <td>${stock.volume.toLocaleString()}</td>
+                <td>${stock.rsi}</td>
+                <td><span class="badge bg-info">${stock.pattern}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-2" onclick="openChart('${stock.symbol}', 'One Hour Setup')">
+                        <i class="fas fa-chart-line"></i> Chart
+                    </button>
+                </td>
+            `;
+        }
         resultsBody.appendChild(row);
     });
     
@@ -294,6 +504,7 @@ function displayResults(results) {
 
 function resetFilters() {
     document.getElementById('scannerForm').reset();
+    document.getElementById('oneHourFilters').classList.add('d-none');
     document.getElementById('scanResults').innerHTML = `
         <div class="text-center text-muted py-5">
             <i class="fas fa-search fa-3x mb-3"></i>
@@ -325,14 +536,233 @@ function applyPreset(presetType) {
             document.getElementById('minVolume').value = '200000';
             document.getElementById('breakoutPattern').checked = true;
             break;
+        case 'oneHourSetup':
+            document.getElementById('oneHourSetup').checked = true;
+            document.getElementById('oneHourFilters').classList.remove('d-none');
+            document.getElementById('highLiquidity').checked = true;
+            document.getElementById('segment').value = 'NSE';
+            document.getElementById('minVolume').value = '500000';
+            break;
     }
     
     // Auto-run scan after applying preset
     performScan();
 }
 
-function viewChart(symbol) {
-    alert(`Chart view for ${symbol} - Feature coming soon!`);
+// Chart functionality is now handled by the chart_modal.html component
+// The openChart function is defined in chart_modal.html
+
+// Update risk amount when quantity or prices change
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('tradeExecutionModal');
+    if (modal) {
+        const quantityInput = document.getElementById('execQuantity');
+        const entryInput = document.getElementById('execEntryPrice');
+        const stopLossInput = document.getElementById('execStopLoss');
+        const riskAmountInput = document.getElementById('execRiskAmount');
+        
+        function updateRiskAmount() {
+            const quantity = parseFloat(quantityInput.value) || 0;
+            const entry = parseFloat(entryInput.value) || 0;
+            const stopLoss = parseFloat(stopLossInput.value) || 0;
+            const riskPerShare = Math.abs(entry - stopLoss);
+            const totalRisk = quantity * riskPerShare;
+            riskAmountInput.value = totalRisk.toFixed(2);
+        }
+        
+        quantityInput.addEventListener('input', updateRiskAmount);
+        entryInput.addEventListener('input', updateRiskAmount);
+        stopLossInput.addEventListener('input', updateRiskAmount);
+    }
+});
+
+// Chart functionality is now handled by the openChart function in chart_modal.html
+
+function executeTrade(symbol, prevClose) {
+    // Get current price and setup trade parameters
+    const currentPrice = 2456.75; // Mock price - replace with real data
+    
+    // Determine trade type based on signal
+    let tradeType, entryPrice, stopLoss, target;
+    
+    if (prevClose === 'Strong Bearish') {
+        tradeType = 'SELL';
+        entryPrice = currentPrice;
+        stopLoss = currentPrice * 1.02; // 2% above entry
+        target = currentPrice * 0.96; // 4% below entry (1:2 ratio)
+    } else if (prevClose === 'Strong Bullish') {
+        tradeType = 'BUY';
+        entryPrice = currentPrice;
+        stopLoss = currentPrice * 0.98; // 2% below entry
+        target = currentPrice * 1.04; // 4% above entry (1:2 ratio)
+    } else {
+        alert('Invalid signal for trade execution');
+        return;
+    }
+    
+    // Calculate suggested quantity based on risk management
+    const riskAmount = 1000; // Rs.1000 risk per trade
+    const riskPerShare = Math.abs(entryPrice - stopLoss);
+    const suggestedQty = Math.floor(riskAmount / riskPerShare);
+    
+    // Populate modal with trade data
+    document.getElementById('execSymbol').value = symbol;
+    document.getElementById('execTradeType').value = tradeType;
+    document.getElementById('execQuantity').value = suggestedQty;
+    document.getElementById('execEntryPrice').value = entryPrice.toFixed(2);
+    document.getElementById('execStopLoss').value = stopLoss.toFixed(2);
+    document.getElementById('execTarget').value = target.toFixed(2);
+    document.getElementById('execRiskAmount').value = (riskPerShare * suggestedQty).toFixed(2);
+    
+    // Store trade data for modal access
+    window.currentTradeData = {
+        symbol: symbol,
+        type: tradeType,
+        quantity: suggestedQty,
+        entryPrice: entryPrice,
+        stopLoss: stopLoss,
+        target: target,
+        strategy: 'One Hour Setup',
+        prevClose: prevClose
+    };
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('tradeExecutionModal'));
+    modal.show();
+}
+
+function confirmTradeExecution() {
+    const tradeData = {
+        ...window.currentTradeData,
+        quantity: parseInt(document.getElementById('execQuantity').value),
+        entryPrice: parseFloat(document.getElementById('execEntryPrice').value),
+        stopLoss: parseFloat(document.getElementById('execStopLoss').value),
+        target: parseFloat(document.getElementById('execTarget').value),
+        timestamp: new Date().toISOString()
+    };
+    
+    // Store in localStorage for paper trading tracking
+    let paperTrades = JSON.parse(localStorage.getItem('paperTrades') || '[]');
+    paperTrades.push(tradeData);
+    localStorage.setItem('paperTrades', JSON.stringify(paperTrades));
+    
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('tradeExecutionModal'));
+    modal.hide();
+    
+    alert(`Paper trade executed for ${tradeData.symbol} (${tradeData.type})\nEntry: Rs.${tradeData.entryPrice.toFixed(2)}\nMonitoring for entry signal...`);
+}
+
+function showPaperTrading() {
+    const paperTrades = JSON.parse(localStorage.getItem('paperTrades') || '[]');
+    
+    if (paperTrades.length === 0) {
+        alert('No paper trades found. Execute some trades first!');
+        return;
+    }
+    
+    let tradeHistory = 'Paper Trading Portfolio:\n\n';
+    let totalPnL = 0;
+    
+    paperTrades.forEach((trade, index) => {
+        const currentPrice = trade.entryPrice + (Math.random() - 0.5) * trade.entryPrice * 0.05; // Mock current price
+        const pnl = trade.type === 'BUY' ? 
+            (currentPrice - trade.entryPrice) * trade.quantity :
+            (trade.entryPrice - currentPrice) * trade.quantity;
+        
+        totalPnL += pnl;
+        
+        tradeHistory += `${index + 1}. ${trade.symbol} (${trade.type})\n`;
+        tradeHistory += `   Entry: Rs.${trade.entryPrice.toFixed(2)} | Current: Rs.${currentPrice.toFixed(2)}\n`;
+        tradeHistory += `   P&L: Rs.${pnl.toFixed(2)} | Qty: ${trade.quantity}\n`;
+        tradeHistory += `   Date: ${new Date(trade.timestamp).toLocaleDateString()}\n\n`;
+    });
+    
+    tradeHistory += `Total P&L: Rs.${totalPnL.toFixed(2)}`;
+    
+    alert(tradeHistory);
 }
 </script>
+
+<!-- Trade Execution Modal -->
+<div class="modal fade" id="tradeExecutionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Execute One Hour Setup Trade</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>One Hour Setup Strategy:</strong> Wait for opposite color candle formation, then enter on breakout with 1:2 risk-reward ratio.
+                </div>
+                
+                <form id="tradeExecutionForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Symbol</label>
+                                <input type="text" class="form-control" id="execSymbol" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Trade Type</label>
+                                <select class="form-select" id="execTradeType" disabled>
+                                    <option value="BUY">Buy (Long)</option>
+                                    <option value="SELL">Sell (Short)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Quantity</label>
+                                <input type="number" class="form-control" id="execQuantity">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Entry Price</label>
+                                <input type="number" step="0.01" class="form-control" id="execEntryPrice">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Risk Amount</label>
+                                <input type="number" step="0.01" class="form-control" id="execRiskAmount" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Stop Loss</label>
+                                <input type="number" step="0.01" class="form-control" id="execStopLoss">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Target Price</label>
+                                <input type="number" step="0.01" class="form-control" id="execTarget">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Strategy</label>
+                        <input type="text" class="form-control" id="execStrategy" value="One Hour Setup" readonly>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="confirmTradeExecution()">
+                    <i class="fas fa-chart-line me-1"></i>Execute Paper Trade
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

@@ -1,0 +1,468 @@
+<!-- Chart Modal for 1-minute timeframe monitoring -->
+<div class="modal fade" id="chartModal" tabindex="-1" aria-labelledby="chartModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="chartModalLabel">
+                    <span id="chartSymbol">SYMBOL</span> - 1 Minute Chart
+                    <span class="badge bg-secondary ms-2" id="chartStrategy">One Hour Setup</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Chart Controls -->
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-primary active" data-timeframe="1m">1M</button>
+                            <button type="button" class="btn btn-outline-primary" data-timeframe="5m">5M</button>
+                            <button type="button" class="btn btn-outline-primary" data-timeframe="15m">15M</button>
+                            <button type="button" class="btn btn-outline-primary" data-timeframe="1h">1H</button>
+                        </div>
+                        <button class="btn btn-success ms-3" id="refreshChart">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="form-check form-switch d-inline-block me-3">
+                            <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
+                            <label class="form-check-label" for="autoRefresh">Auto Refresh</label>
+                        </div>
+                        <span class="badge bg-info" id="lastUpdate">Live</span>
+                    </div>
+                </div>
+
+                <!-- Market Status and Current Price -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <div class="row align-items-center">
+                                    <div class="col-md-3">
+                                        <h6 class="mb-0">Current Price</h6>
+                                        <h4 class="mb-0" id="currentPrice">₹0.00</h4>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <h6 class="mb-0">Change</h6>
+                                        <h5 class="mb-0" id="priceChange">+₹0.00 (0%)</h5>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <h6 class="mb-0">Volume</h6>
+                                        <span id="volume">0</span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <h6 class="mb-0">Market Status</h6>
+                                        <span class="badge bg-success" id="marketStatus">Open</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Strategy Signals Panel -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0">One Hour Setup Signals</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="signal-box">
+                                            <h6>Previous Day Close</h6>
+                                            <span class="badge" id="prevDayClose">Analyzing...</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="signal-box">
+                                            <h6>Opening Status</h6>
+                                            <span class="badge" id="openingStatus">Checking...</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="signal-box">
+                                            <h6>Entry Signal</h6>
+                                            <span class="badge" id="entrySignal">Waiting...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-12">
+                                        <div class="alert alert-info mb-0" id="signalAlert">
+                                            <i class="fas fa-info-circle"></i>
+                                            <span id="signalMessage">Monitoring for One Hour Setup conditions...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart Container -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-body p-0">
+                                <div id="chartContainer" style="height: 500px; position: relative;">
+                                    <canvas id="priceChart" width="100%" height="500"></canvas>
+                                    <div id="chartLoading" class="d-flex justify-content-center align-items-center" 
+                                         style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.8);">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading chart...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trade Actions (if applicable) -->
+                <div class="row mt-3" id="tradeActions" style="display: none;">
+                    <div class="col-md-12">
+                        <div class="card border-success">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0">Trade Execution</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <button class="btn btn-success btn-lg w-100" id="executeLongTrade">
+                                            <i class="fas fa-arrow-up"></i> Execute Long Trade
+                                        </button>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <button class="btn btn-danger btn-lg w-100" id="executeShortTrade">
+                                            <i class="fas fa-arrow-down"></i> Execute Short Trade
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-md-12">
+                                        <small class="text-muted">
+                                            Entry: <span id="suggestedEntry">₹0.00</span> | 
+                                            SL: <span id="suggestedSL">₹0.00</span> | 
+                                            Target: <span id="suggestedTarget">₹0.00</span>
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="openPaperTrading">Open Paper Trading</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.signal-box {
+    text-align: center;
+    padding: 10px;
+}
+.signal-box h6 {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+#chartContainer {
+    background: #f8f9fa;
+    border-radius: 0.375rem;
+}
+</style>
+
+<script>
+let chartData = [];
+let currentSymbol = '';
+let currentTimeframe = '1m';
+let autoRefreshInterval = null;
+let priceChart = null;
+
+function openChart(symbol, strategy = 'One Hour Setup') {
+    currentSymbol = symbol;
+    document.getElementById('chartSymbol').textContent = symbol;
+    document.getElementById('chartStrategy').textContent = strategy;
+    
+    // Show modal
+    const chartModal = new bootstrap.Modal(document.getElementById('chartModal'));
+    chartModal.show();
+    
+    // Load initial chart data
+    loadChartData();
+    
+    // Start auto refresh if enabled
+    if (document.getElementById('autoRefresh').checked) {
+        startAutoRefresh();
+    }
+}
+
+function loadChartData() {
+    document.getElementById('chartLoading').style.display = 'flex';
+    
+    fetch(`/api/chart-data/${currentSymbol}?timeframe=${currentTimeframe}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                chartData = data.data;
+                updateChart();
+                updateMarketInfo(data.marketInfo);
+                updateSignals(data.signals);
+            } else {
+                console.error('Error loading chart data:', data.error);
+                // Load mock data for demonstration
+                loadMockChartData();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            loadMockChartData();
+        })
+        .finally(() => {
+            document.getElementById('chartLoading').style.display = 'none';
+        });
+}
+
+function loadMockChartData() {
+    // Generate mock 1-minute candlestick data
+    const now = new Date();
+    const mockData = [];
+    let basePrice = 2500;
+    
+    for (let i = 60; i >= 0; i--) {
+        const time = new Date(now.getTime() - i * 60000);
+        const open = basePrice + (Math.random() - 0.5) * 10;
+        const high = open + Math.random() * 15;
+        const low = open - Math.random() * 15;
+        const close = low + Math.random() * (high - low);
+        const volume = Math.floor(Math.random() * 10000) + 1000;
+        
+        mockData.push({
+            time: time.toISOString(),
+            open: open.toFixed(2),
+            high: high.toFixed(2),
+            low: low.toFixed(2),
+            close: close.toFixed(2),
+            volume: volume
+        });
+        
+        basePrice = close;
+    }
+    
+    chartData = mockData;
+    updateChart();
+    
+    // Mock market info
+    updateMarketInfo({
+        currentPrice: basePrice.toFixed(2),
+        change: ((Math.random() - 0.5) * 50).toFixed(2),
+        changePercent: ((Math.random() - 0.5) * 2).toFixed(2),
+        volume: Math.floor(Math.random() * 1000000),
+        status: 'Open'
+    });
+    
+    // Mock signals
+    updateSignals({
+        prevDayClose: Math.random() > 0.5 ? 'Strong Bullish' : 'Strong Bearish',
+        openingStatus: Math.random() > 0.7 ? 'Flat Open' : 'Gap Open',
+        entrySignal: Math.random() > 0.8 ? 'Entry Triggered' : 'Waiting for Signal'
+    });
+}
+
+function updateChart() {
+    const canvas = document.getElementById('priceChart');
+    const ctx = canvas.getContext('2d');
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    if (chartData.length === 0) return;
+    
+    // Simple candlestick chart implementation
+    const padding = 40;
+    const chartWidth = canvas.width - 2 * padding;
+    const chartHeight = canvas.height - 2 * padding;
+    
+    // Find price range
+    const prices = chartData.flatMap(d => [parseFloat(d.high), parseFloat(d.low)]);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const priceRange = maxPrice - minPrice;
+    
+    // Draw candlesticks
+    const candleWidth = chartWidth / chartData.length * 0.8;
+    
+    chartData.forEach((candle, index) => {
+        const x = padding + (index * chartWidth / chartData.length);
+        const open = parseFloat(candle.open);
+        const high = parseFloat(candle.high);
+        const low = parseFloat(candle.low);
+        const close = parseFloat(candle.close);
+        
+        const openY = padding + (maxPrice - open) / priceRange * chartHeight;
+        const highY = padding + (maxPrice - high) / priceRange * chartHeight;
+        const lowY = padding + (maxPrice - low) / priceRange * chartHeight;
+        const closeY = padding + (maxPrice - close) / priceRange * chartHeight;
+        
+        // Determine color
+        const isGreen = close > open;
+        ctx.strokeStyle = isGreen ? '#28a745' : '#dc3545';
+        ctx.fillStyle = isGreen ? '#28a745' : '#dc3545';
+        
+        // Draw wick
+        ctx.beginPath();
+        ctx.moveTo(x + candleWidth/2, highY);
+        ctx.lineTo(x + candleWidth/2, lowY);
+        ctx.stroke();
+        
+        // Draw body
+        const bodyTop = Math.min(openY, closeY);
+        const bodyHeight = Math.abs(closeY - openY);
+        
+        if (isGreen) {
+            ctx.fillRect(x, bodyTop, candleWidth, bodyHeight);
+        } else {
+            ctx.strokeRect(x, bodyTop, candleWidth, bodyHeight);
+        }
+    });
+    
+    // Draw price labels
+    ctx.fillStyle = '#6c757d';
+    ctx.font = '12px Arial';
+    ctx.fillText(maxPrice.toFixed(2), 5, padding + 15);
+    ctx.fillText(minPrice.toFixed(2), 5, padding + chartHeight - 5);
+}
+
+function updateMarketInfo(info) {
+    document.getElementById('currentPrice').textContent = `Rs.${info.currentPrice}`;
+    
+    const change = parseFloat(info.change);
+    const changeElement = document.getElementById('priceChange');
+    changeElement.textContent = `${change >= 0 ? '+' : ''}Rs.${info.change} (${info.changePercent}%)`;
+    changeElement.className = `mb-0 ${change >= 0 ? 'text-success' : 'text-danger'}`;
+    
+    document.getElementById('volume').textContent = info.volume.toLocaleString();
+    document.getElementById('marketStatus').textContent = info.status;
+    document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+}
+
+function updateSignals(signals) {
+    // Update signal badges
+    const prevCloseElement = document.getElementById('prevDayClose');
+    prevCloseElement.textContent = signals.prevDayClose;
+    prevCloseElement.className = `badge ${signals.prevDayClose.includes('Bullish') ? 'bg-success' : 'bg-danger'}`;
+    
+    const openingElement = document.getElementById('openingStatus');
+    openingElement.textContent = signals.openingStatus;
+    openingElement.className = `badge ${signals.openingStatus === 'Flat Open' ? 'bg-success' : 'bg-warning'}`;
+    
+    const entryElement = document.getElementById('entrySignal');
+    entryElement.textContent = signals.entrySignal;
+    entryElement.className = `badge ${signals.entrySignal === 'Entry Triggered' ? 'bg-success' : 'bg-secondary'}`;
+    
+    // Update signal message
+    let message = 'Monitoring for One Hour Setup conditions...';
+    let alertClass = 'alert-info';
+    
+    if (signals.entrySignal === 'Entry Triggered') {
+        message = 'Entry signal triggered! Ready to execute trade.';
+        alertClass = 'alert-success';
+        document.getElementById('tradeActions').style.display = 'block';
+    } else if (signals.openingStatus === 'Flat Open' && signals.prevDayClose !== 'Analyzing...') {
+        message = `Flat opening detected with ${signals.prevDayClose} close. Waiting for opposite color candle...`;
+        alertClass = 'alert-warning';
+    }
+    
+    const alertElement = document.getElementById('signalAlert');
+    alertElement.className = `alert ${alertClass} mb-0`;
+    document.getElementById('signalMessage').textContent = message;
+}
+
+function startAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+    
+    autoRefreshInterval = setInterval(() => {
+        if (document.getElementById('autoRefresh').checked) {
+            loadChartData();
+        }
+    }, 10000); // Refresh every 10 seconds
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Timeframe buttons
+    document.querySelectorAll('[data-timeframe]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('[data-timeframe]').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentTimeframe = this.dataset.timeframe;
+            loadChartData();
+        });
+    });
+    
+    // Refresh button
+    document.getElementById('refreshChart').addEventListener('click', loadChartData);
+    
+    // Auto refresh toggle
+    document.getElementById('autoRefresh').addEventListener('change', function() {
+        if (this.checked) {
+            startAutoRefresh();
+        } else {
+            stopAutoRefresh();
+        }
+    });
+    
+    // Trade execution buttons
+    document.getElementById('executeLongTrade').addEventListener('click', function() {
+        executeTrade('BUY');
+    });
+    
+    document.getElementById('executeShortTrade').addEventListener('click', function() {
+        executeTrade('SELL');
+    });
+    
+    // Open paper trading
+    document.getElementById('openPaperTrading').addEventListener('click', function() {
+        window.open('/paper-trading', '_blank');
+    });
+    
+    // Clean up on modal close
+    document.getElementById('chartModal').addEventListener('hidden.bs.modal', function() {
+        stopAutoRefresh();
+    });
+});
+
+function executeTrade(type) {
+    // This would integrate with the existing trade execution modal
+    const tradeData = {
+        symbol: currentSymbol,
+        type: type,
+        strategy: 'One Hour Setup',
+        entryPrice: document.getElementById('currentPrice').textContent.replace('Rs.', ''),
+        // Calculate SL and target based on current signals
+    };
+    
+    // Close chart modal and open trade execution modal
+    bootstrap.Modal.getInstance(document.getElementById('chartModal')).hide();
+    
+    // Trigger trade execution (integrate with existing function)
+    if (typeof executeTrade !== 'undefined') {
+        executeTrade(currentSymbol, type);
+    }
+}
+</script>

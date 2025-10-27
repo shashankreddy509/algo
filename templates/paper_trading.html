@@ -1,0 +1,536 @@
+{% extends "base.html" %}
+
+{% block title %}Paper Trading - Fyers Trading{% endblock %}
+
+{% block content %}
+<style>
+    .risk-metric {
+        text-align: center;
+    }
+    .risk-metric h6 {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    .progress {
+        height: 8px;
+    }
+</style>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Paper Trading Portfolio
+                    </h4>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success btn-sm" onclick="showNewTradeModal()">
+                            <i class="fas fa-plus me-1"></i>New Trade
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="refreshPortfolio()">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Portfolio Summary -->
+                    <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Risk Management Dashboard</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="risk-metric">
+                                    <h6>Portfolio Risk</h6>
+                                    <div class="progress mb-2">
+                                        <div class="progress-bar" id="riskProgressBar" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <small id="riskText">₹0 / ₹0 (0%)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="risk-metric">
+                                    <h6>Active Positions</h6>
+                                    <div class="progress mb-2">
+                                        <div class="progress-bar bg-info" id="positionsProgressBar" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <small id="positionsText">0 / 5</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="risk-metric">
+                                    <h6>Index Trades</h6>
+                                    <div class="progress mb-2">
+                                        <div class="progress-bar bg-warning" id="indexTradesProgressBar" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <small id="indexTradesText">0 / 2</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="risk-metric">
+                                    <h6>Strategy Breakdown</h6>
+                                    <div id="strategyBreakdown">
+                                        <small class="text-muted">No active positions</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Portfolio Value</h5>
+                                    <h3 id="portfolioValue">₹1,00,000</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Total P&L</h5>
+                                    <h3 id="totalPnL">₹0</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Active Trades</h5>
+                                    <h3 id="activeTrades">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Win Rate</h5>
+                                    <h3 id="winRate">0%</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Positions -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h5>Active Positions</h5>
+                            <div class="table-responsive">
+                                <table class="table table-striped" id="activePositionsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Symbol</th>
+                                            <th>Type</th>
+                                            <th>Qty</th>
+                                            <th>Entry Price</th>
+                                            <th>Current Price</th>
+                                            <th>P&L</th>
+                                            <th>Stop Loss</th>
+                                            <th>Target</th>
+                                            <th>Strategy</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="activePositionsBody">
+                                        <tr>
+                                            <td colspan="10" class="text-center text-muted">No active positions</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trade History -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5>Trade History</h5>
+                            <div class="table-responsive">
+                                <table class="table table-striped" id="tradeHistoryTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Symbol</th>
+                                            <th>Type</th>
+                                            <th>Qty</th>
+                                            <th>Entry</th>
+                                            <th>Exit</th>
+                                            <th>P&L</th>
+                                            <th>Strategy</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tradeHistoryBody">
+                                        <tr>
+                                            <td colspan="9" class="text-center text-muted">No trade history</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Trade Modal -->
+<div class="modal fade" id="newTradeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Execute New Trade</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newTradeForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Symbol</label>
+                                <input type="text" class="form-control" id="tradeSymbol" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Trade Type</label>
+                                <select class="form-select" id="tradeType" required>
+                                    <option value="">Select Type</option>
+                                    <option value="BUY">Buy (Long)</option>
+                                    <option value="SELL">Sell (Short)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Quantity</label>
+                                <input type="number" class="form-control" id="tradeQuantity" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Entry Price</label>
+                                <input type="number" step="0.01" class="form-control" id="entryPrice" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Current Price</label>
+                                <input type="number" step="0.01" class="form-control" id="currentPrice" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Stop Loss</label>
+                                <input type="number" step="0.01" class="form-control" id="stopLoss" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Target Price</label>
+                                <input type="number" step="0.01" class="form-control" id="targetPrice" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Strategy</label>
+                                <select class="form-select" id="strategy">
+                                    <option value="One Hour Setup">One Hour Setup</option>
+                                    <option value="Manual">Manual Trade</option>
+                                    <option value="Breakout">Breakout</option>
+                                    <option value="Reversal">Reversal</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Risk Amount</label>
+                                <input type="number" step="0.01" class="form-control" id="riskAmount" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" id="tradeNotes" rows="2" placeholder="Trade setup notes..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="executeTrade()">Execute Trade</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let portfolio = {
+    value: 100000,
+    totalPnL: 0,
+    activeTrades: 0,
+    completedTrades: 0,
+    winningTrades: 0
+};
+
+let activePositions = [];
+let tradeHistory = [];
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    loadPortfolioData();
+    loadRiskManagementData();
+    updatePortfolioSummary();
+    
+    // Auto-refresh every 30 seconds
+    setInterval(() => {
+        loadPortfolioData();
+        loadRiskManagementData();
+    }, 30000);
+});
+
+function showNewTradeModal() {
+    const modal = new bootstrap.Modal(document.getElementById('newTradeModal'));
+    modal.show();
+    
+    // Reset form
+    document.getElementById('newTradeForm').reset();
+}
+
+function loadRiskManagementData() {
+    fetch('/api/risk-management/status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateRiskManagementDashboard(data.riskMetrics);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading risk management data:', error);
+        });
+}
+
+function updateRiskManagementDashboard(metrics) {
+    // Update portfolio risk
+    const riskPercentage = Math.min(metrics.riskPercentage, 100);
+    const riskProgressBar = document.getElementById('riskProgressBar');
+    riskProgressBar.style.width = `${riskPercentage}%`;
+    riskProgressBar.className = `progress-bar ${riskPercentage > 80 ? 'bg-danger' : riskPercentage > 50 ? 'bg-warning' : 'bg-success'}`;
+    document.getElementById('riskText').textContent = 
+        `Rs.${metrics.totalRisk.toLocaleString()} / Rs.${metrics.maxRiskAllowed.toLocaleString()} (${riskPercentage.toFixed(1)}%)`;
+    
+    // Update active positions
+    const positionsPercentage = (metrics.activePositions / metrics.maxPositions) * 100;
+    const positionsProgressBar = document.getElementById('positionsProgressBar');
+    positionsProgressBar.style.width = `${positionsPercentage}%`;
+    positionsProgressBar.className = `progress-bar ${positionsPercentage > 80 ? 'bg-danger' : 'bg-info'}`;
+    document.getElementById('positionsText').textContent = `${metrics.activePositions} / ${metrics.maxPositions}`;
+    
+    // Update index trades
+    const indexPercentage = (metrics.indexTrades / metrics.maxIndexTrades) * 100;
+    const indexProgressBar = document.getElementById('indexTradesProgressBar');
+    indexProgressBar.style.width = `${indexPercentage}%`;
+    indexProgressBar.className = `progress-bar ${indexPercentage >= 100 ? 'bg-danger' : 'bg-warning'}`;
+    document.getElementById('indexTradesText').textContent = `${metrics.indexTrades} / ${metrics.maxIndexTrades}`;
+    
+    // Update strategy breakdown
+    const strategyDiv = document.getElementById('strategyBreakdown');
+    if (Object.keys(metrics.strategyBreakdown).length === 0) {
+        strategyDiv.innerHTML = '<small class="text-muted">No active positions</small>';
+    } else {
+        strategyDiv.innerHTML = Object.entries(metrics.strategyBreakdown)
+            .map(([strategy, count]) => `<small class="d-block">${strategy}: ${count}</small>`)
+            .join('');
+    }
+}
+
+function loadPortfolioData() {
+    fetch('/api/paper-trading/portfolio')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                portfolio = data.portfolio;
+                activePositions = data.activePositions || [];
+                tradeHistory = data.tradeHistory || [];
+                
+                updatePortfolioSummary();
+                updateActivePositionsTable();
+                updateTradeHistoryTable();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading portfolio:', error);
+        });
+}
+
+function updatePortfolioSummary() {
+    document.getElementById('portfolioValue').textContent = `Rs.${portfolio.value.toLocaleString()}`;
+    document.getElementById('totalPnL').textContent = `Rs.${portfolio.totalPnL.toLocaleString()}`;
+    document.getElementById('activeTrades').textContent = portfolio.activeTrades;
+    
+    const winRate = portfolio.completedTrades > 0 ? 
+        ((portfolio.winningTrades / portfolio.completedTrades) * 100).toFixed(1) : 0;
+    document.getElementById('winRate').textContent = `${winRate}%`;
+}
+
+function updateActivePositionsTable() {
+    const tbody = document.getElementById('activePositionsBody');
+    
+    if (activePositions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No active positions</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = activePositions.map(position => `
+        <tr>
+            <td><strong>${position.symbol}</strong></td>
+            <td><span class="badge ${position.type === 'BUY' ? 'bg-success' : 'bg-danger'}">${position.type}</span></td>
+            <td>${position.quantity}</td>
+            <td>Rs.${position.entryPrice.toFixed(2)}</td>
+                <td>Rs.${position.currentPrice.toFixed(2)}</td>
+                <td class="${position.pnl >= 0 ? 'text-success' : 'text-danger'}">Rs.${position.pnl.toFixed(2)}</td>
+                <td>Rs.${position.stopLoss.toFixed(2)}</td>
+                <td>Rs.${position.target.toFixed(2)}</td>
+            <td><small>${position.strategy}</small></td>
+            <td>
+                <button class="btn btn-sm btn-outline-danger" onclick="closePosition('${position.id}')">
+                    <i class="fas fa-times"></i> Close
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function updateTradeHistoryTable() {
+    const tbody = document.getElementById('tradeHistoryBody');
+    
+    if (tradeHistory.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No trade history</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = tradeHistory.slice(-10).reverse().map(trade => `
+        <tr>
+            <td>${new Date(trade.date).toLocaleDateString()}</td>
+            <td><strong>${trade.symbol}</strong></td>
+            <td><span class="badge ${trade.type === 'BUY' ? 'bg-success' : 'bg-danger'}">${trade.type}</span></td>
+            <td>${trade.quantity}</td>
+            <td>Rs.${trade.entryPrice.toFixed(2)}</td>
+                <td>Rs.${trade.exitPrice.toFixed(2)}</td>
+                <td class="${trade.pnl >= 0 ? 'text-success' : 'text-danger'}">Rs.${trade.pnl.toFixed(2)}</td>
+            <td><small>${trade.strategy}</small></td>
+            <td><span class="badge ${trade.status === 'PROFIT' ? 'bg-success' : trade.status === 'LOSS' ? 'bg-danger' : 'bg-secondary'}">${trade.status}</span></td>
+        </tr>
+    `).join('');
+}
+
+function executeTrade() {
+    const formData = {
+        symbol: document.getElementById('tradeSymbol').value,
+        type: document.getElementById('tradeType').value,
+        quantity: parseInt(document.getElementById('tradeQuantity').value),
+        entryPrice: parseFloat(document.getElementById('entryPrice').value),
+        stopLoss: parseFloat(document.getElementById('stopLoss').value),
+        target: parseFloat(document.getElementById('targetPrice').value),
+        strategy: document.getElementById('strategy').value,
+        notes: document.getElementById('tradeNotes').value
+    };
+    
+    // Validate form
+    if (!formData.symbol || !formData.type || !formData.quantity || !formData.entryPrice) {
+        alert('Please fill all required fields');
+        return;
+    }
+    
+    fetch('/api/paper-trading/execute', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Trade executed successfully!');
+            bootstrap.Modal.getInstance(document.getElementById('newTradeModal')).hide();
+            loadPortfolioData();
+        } else {
+            alert('Error executing trade: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error executing trade:', error);
+        alert('Error executing trade');
+    });
+}
+
+function closePosition(positionId) {
+    if (!confirm('Are you sure you want to close this position?')) {
+        return;
+    }
+    
+    fetch('/api/paper-trading/close', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ positionId: positionId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Position closed successfully!');
+            loadPortfolioData();
+        } else {
+            alert('Error closing position: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error closing position:', error);
+        alert('Error closing position');
+    });
+}
+
+function refreshPortfolio() {
+    loadPortfolioData();
+}
+
+// Auto-calculate risk amount when SL and entry price change
+document.addEventListener('DOMContentLoaded', function() {
+    const entryPrice = document.getElementById('entryPrice');
+    const stopLoss = document.getElementById('stopLoss');
+    const quantity = document.getElementById('tradeQuantity');
+    const riskAmount = document.getElementById('riskAmount');
+    
+    function calculateRisk() {
+        const entry = parseFloat(entryPrice.value) || 0;
+        const sl = parseFloat(stopLoss.value) || 0;
+        const qty = parseInt(quantity.value) || 0;
+        
+        if (entry && sl && qty) {
+            const risk = Math.abs(entry - sl) * qty;
+            riskAmount.value = risk.toFixed(2);
+        }
+    }
+    
+    if (entryPrice && stopLoss && quantity) {
+        entryPrice.addEventListener('input', calculateRisk);
+        stopLoss.addEventListener('input', calculateRisk);
+        quantity.addEventListener('input', calculateRisk);
+    }
+});
+</script>
+{% endblock %}
