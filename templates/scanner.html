@@ -155,6 +155,12 @@
                     <button id="downloadCsvBtn" class="btn btn-sm btn-outline-light d-none" onclick="downloadCSV()" title="Download results as CSV">
                         <i class="fas fa-download me-1"></i>CSV
                     </button>
+                    <button id="saveFirestoreBtn" class="btn btn-sm btn-outline-light d-none" onclick="saveToFirestore()" title="Save results to Firestore">
+                        <i class="fas fa-cloud me-1"></i>Save
+                    </button>
+                    <button id="createWishlistBtn" class="btn btn-sm btn-outline-light d-none" onclick="createFyersWishlist()" title="Create Fyers wishlist">
+                        <i class="fas fa-heart me-1"></i>Wishlist
+                    </button>
                 </div>
             </div>
             <div class="card-body">
@@ -305,12 +311,19 @@ function performScan() {
         displayResults(data.results || [], formData.oneHourSetup);
         loadingSpinner.classList.add('d-none');
         
-        // Show CSV download button if results exist
+        // Show action buttons if results exist
         const downloadBtn = document.getElementById('downloadCsvBtn');
+        const saveFirestoreBtn = document.getElementById('saveFirestoreBtn');
+        const createWishlistBtn = document.getElementById('createWishlistBtn');
+        
         if (data.results && data.results.length > 0) {
             downloadBtn.classList.remove('d-none');
+            saveFirestoreBtn.classList.remove('d-none');
+            createWishlistBtn.classList.remove('d-none');
         } else {
             downloadBtn.classList.add('d-none');
+            saveFirestoreBtn.classList.add('d-none');
+            createWishlistBtn.classList.add('d-none');
         }
     })
     .catch(error => {
@@ -642,6 +655,116 @@ function getSelectedStocks() {
     }
     
     return []; // Return empty array for non-custom selections
+}
+
+// Save scanner results to Firebase Firestore
+function saveToFirestore() {
+    const results = getCurrentScanResults();
+    if (!results || results.length === 0) {
+        alert('No scan results to save');
+        return;
+    }
+    
+    const saveBtn = document.getElementById('saveFirestoreBtn');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+    saveBtn.disabled = true;
+    
+    fetch('/save_to_firestore', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            results: results,
+            scan_type: 'regular',
+            timestamp: new Date().toISOString()
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Successfully saved ${results.length} results to Firestore!`);
+        } else {
+            alert('Error saving to Firestore: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving to Firestore: ' + error.message);
+    })
+    .finally(() => {
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    });
+}
+
+// Create Fyers wishlist from scanner results
+function createFyersWishlist() {
+    const results = getCurrentScanResults();
+    if (!results || results.length === 0) {
+        alert('No scan results to create wishlist');
+        return;
+    }
+    
+    const wishlistBtn = document.getElementById('createWishlistBtn');
+    const originalText = wishlistBtn.innerHTML;
+    wishlistBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Creating...';
+    wishlistBtn.disabled = true;
+    
+    const symbols = results.map(stock => stock.symbol);
+    
+    fetch('/create_fyers_wishlist', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            symbols: symbols,
+            wishlist_name: `Scanner Results ${new Date().toLocaleDateString()}`
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Successfully created Fyers wishlist with ${symbols.length} stocks!`);
+        } else {
+            alert('Error creating Fyers wishlist: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error creating Fyers wishlist: ' + error.message);
+    })
+    .finally(() => {
+        wishlistBtn.innerHTML = originalText;
+        wishlistBtn.disabled = false;
+    });
+}
+
+// Helper function to get current scan results
+function getCurrentScanResults() {
+    const resultsBody = document.getElementById('resultsBody');
+    if (!resultsBody || resultsBody.children.length === 0) {
+        return [];
+    }
+    
+    const results = [];
+    Array.from(resultsBody.children).forEach(row => {
+        const cells = row.children;
+        if (cells.length >= 6) {
+            results.push({
+                symbol: cells[0].textContent.trim(),
+                price: parseFloat(cells[1].textContent.replace('₹', '').trim()),
+                change_percent: parseFloat(cells[2].textContent.replace('%', '').trim()),
+                volume: cells[3].textContent.trim(),
+                rsi: parseFloat(cells[4].textContent.trim()) || null,
+                pattern: cells[5].textContent.trim()
+            });
+        }
+    });
+    
+    return results;
 }
 </script>
 

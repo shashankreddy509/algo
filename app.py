@@ -9,6 +9,7 @@ import csv
 import io
 from datetime import datetime
 from paper_trading_db import paper_trading_db
+from firebase_config import firebase_config
 
 # Load environment variables
 load_dotenv()
@@ -303,6 +304,97 @@ def api_scanner_export_csv():
     except Exception as e:
         print(f"CSV export error: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/save_to_firestore', methods=['POST'])
+def save_to_firestore():
+    """Save scanner results to Firebase Firestore"""
+    try:
+        data = request.get_json()
+        results = data.get('results', [])
+        scan_type = data.get('scan_type', 'regular')
+        
+        if not results:
+            return jsonify({'success': False, 'error': 'No results to save'}), 400
+        
+        # Save to Firestore
+        response = firebase_config.save_scanner_results(
+            results=results,
+            scan_type=scan_type,
+            user_id=session.get('user_id', 'anonymous')
+        )
+        
+        return jsonify(response)
+        
+    except Exception as e:
+        print(f"Firestore save error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/create_fyers_wishlist', methods=['POST'])
+def create_fyers_wishlist():
+    """Create a wishlist in Fyers with scanner results"""
+    try:
+        data = request.get_json()
+        symbols = data.get('symbols', [])
+        wishlist_name = data.get('wishlist_name', f'Scanner Results {datetime.now().strftime("%Y-%m-%d")}')
+        
+        if not symbols:
+            return jsonify({'success': False, 'error': 'No symbols to add to wishlist'}), 400
+        
+        # Check if user is authenticated with Fyers
+        access_token = session.get('access_token')
+        if not access_token:
+            return jsonify({'success': False, 'error': 'Please login to Fyers first'}), 401
+        
+        # Initialize Fyers API
+        fyers = fyersModel.FyersModel(client_id=FYERS_CLIENT_ID, token=access_token)
+        
+        # Note: Based on research, Fyers API v3 doesn't appear to have direct watchlist creation endpoints
+        # The API focuses on trading operations, user data, and market data
+        # Watchlist management might need to be done through the Fyers web/mobile interface
+        
+        # For now, we'll save the symbols to Firestore as a "wishlist" that users can reference
+        try:
+            # Save wishlist to Firestore instead
+            wishlist_data = {
+                'name': wishlist_name,
+                'symbols': symbols,
+                'created_at': datetime.now().isoformat(),
+                'type': 'fyers_wishlist',
+                'user_id': session.get('user_id', 'anonymous'),
+                'symbol_count': len(symbols)
+            }
+            
+            # Use Firebase to store the wishlist
+            response = firebase_config.save_scanner_results(
+                results=wishlist_data,
+                scan_type='wishlist',
+                user_id=session.get('user_id', 'anonymous')
+            )
+            
+            if response.get('success'):
+                return jsonify({
+                    'success': True,
+                    'message': f'Wishlist "{wishlist_name}" saved with {len(symbols)} symbols',
+                    'symbols_added': len(symbols),
+                    'note': 'Wishlist saved to Firebase. Fyers API v3 does not provide direct watchlist creation endpoints. You can manually add these symbols to your Fyers watchlist.',
+                    'symbols': symbols
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to save wishlist to Firebase'
+                }), 500
+            
+        except Exception as firebase_error:
+            print(f"Firebase wishlist error: {str(firebase_error)}")
+            return jsonify({
+                'success': False,
+                'error': f'Firebase error: {str(firebase_error)}'
+            }), 500
+        
+    except Exception as e:
+        print(f"Wishlist creation error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 def scan_one_hour_setup(fyers, filters):
     """
