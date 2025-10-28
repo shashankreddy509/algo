@@ -77,6 +77,7 @@ pip install gunicorn==21.2.0
 pip install setuptools>=68.0.0
 pip install wheel>=0.41.0
 pip install fyers-apiv3
+pip install firebase-admin
 
 # Step 5: Find and install the latest available fyers-apiv3
 log_info "Finding latest available fyers-apiv3 version..."
