@@ -309,12 +309,35 @@ def scan_one_hour_setup(fyers, filters):
     Scan for One Hour Setup strategy candidates
     """
     try:
-        # Get Nifty 50 and F&O stocks dynamically
-        nifty_fno_symbols = get_nifty_fno_symbols(fyers)
+        # Get stock selection from filters
+        stock_selection = filters.get('stockSelection', 'all')
+        selected_stocks = filters.get('selectedStocks', [])
+        
+        # Determine which stocks to scan based on selection
+        if stock_selection == 'nifty50':
+            # Get only Nifty 50 stocks
+            nifty_50 = [
+                "NSE:ADANIENT-EQ","NSE:ADANIPORTS-EQ","NSE:APOLLOHOSP-EQ","NSE:ASIANPAINT-EQ","NSE:AXISBANK-EQ","NSE:BAJAJ-AUTO-EQ","NSE:BAJFINANCE-EQ","NSE:BAJAJFINSV-EQ","NSE:BEL-EQ","NSE:BPCL-EQ","NSE:BHARTIARTL-EQ","NSE:BRITANNIA-EQ","NSE:CIPLA-EQ","NSE:COALINDIA-EQ","NSE:DRREDDY-EQ","NSE:EICHERMOT-EQ","NSE:GRASIM-EQ","NSE:HCLTECH-EQ","NSE:HDFCBANK-EQ","NSE:HDFCLIFE-EQ","NSE:HEROMOTOCO-EQ","NSE:HINDALCO-EQ","NSE:HINDUNILVR-EQ","NSE:ICICIBANK-EQ","NSE:ITC-EQ","NSE:INDUSINDBK-EQ","NSE:INFY-EQ","NSE:JSWSTEEL-EQ","NSE:KOTAKBANK-EQ","NSE:LT-EQ","NSE:M&M-EQ","NSE:MARUTI-EQ","NSE:NTPC-EQ","NSE:NESTLEIND-EQ","NSE:ONGC-EQ","NSE:POWERGRID-EQ","NSE:RELIANCE-EQ","NSE:SBILIFE-EQ","NSE:SHRIRAMFIN-EQ","NSE:SBIN-EQ","NSE:SUNPHARMA-EQ","NSE:TCS-EQ","NSE:TATACONSUM-EQ","NSE:TATASTEEL-EQ","NSE:TECHM-EQ","NSE:TITAN-EQ","NSE:TRENT-EQ","NSE:ULTRACEMCO-EQ","NSE:WIPRO-EQ"
+            ]
+            symbols_to_scan = nifty_50
+        elif stock_selection == 'fno':
+            # Get only F&O stocks
+            symbols_to_scan = get_nifty_fno_symbols(fyers)
+        elif stock_selection == 'custom' and selected_stocks:
+            # Use custom selected stocks - add NSE: prefix if not present
+            symbols_to_scan = []
+            for stock in selected_stocks:
+                if ':' not in stock:
+                    symbols_to_scan.append(f"NSE:{stock}-EQ")
+                else:
+                    symbols_to_scan.append(stock)
+        else:
+            # Default: Get all Nifty 50 and F&O stocks
+            symbols_to_scan = get_nifty_fno_symbols(fyers)
         
         results = []
         
-        for symbol in nifty_fno_symbols:  # Scan all symbols in the list
+        for symbol in symbols_to_scan:  # Scan selected symbols
             try:
                 # Get historical data for previous day analysis
                 hist_data = get_historical_data(fyers, symbol)
@@ -350,52 +373,36 @@ def scan_one_hour_setup(fyers, filters):
 
 def get_dynamic_symbols(fyers, segment='NSE'):
     """
-    Get dynamic symbol list from Fyers API based on market segment
+    Get dynamic symbol list from Fyers API
+    Since market segment filtering was removed, this now returns NSE stocks by default
     """
     try:
-        # For NSE, get high-volume liquid stocks
-        if segment == 'NSE':
-            # Get Nifty 50 symbols as they are most liquid
-            nifty_50_symbols = [
-                "NSE:RELIANCE-EQ", "NSE:TCS-EQ", "NSE:INFY-EQ", "NSE:HDFCBANK-EQ",
-                "NSE:ICICIBANK-EQ", "NSE:KOTAKBANK-EQ", "NSE:SBIN-EQ", "NSE:BHARTIARTL-EQ",
-                "NSE:ITC-EQ", "NSE:LT-EQ", "NSE:HCLTECH-EQ", "NSE:AXISBANK-EQ",
-                "NSE:MARUTI-EQ", "NSE:ASIANPAINT-EQ", "NSE:NESTLEIND-EQ", "NSE:ULTRACEMCO-EQ",
-                "NSE:WIPRO-EQ", "NSE:TECHM-EQ", "NSE:POWERGRID-EQ", "NSE:NTPC-EQ",
-                "NSE:BAJFINANCE-EQ", "NSE:BAJAJFINSV-EQ", "NSE:HINDUNILVR-EQ", "NSE:TITAN-EQ",
-                "NSE:ONGC-EQ", "NSE:SUNPHARMA-EQ", "NSE:DRREDDY-EQ", "NSE:CIPLA-EQ",
-                "NSE:COALINDIA-EQ", "NSE:JSWSTEEL-EQ", "NSE:TATASTEEL-EQ", "NSE:HINDALCO-EQ",
-                "NSE:ADANIPORTS-EQ", "NSE:GRASIM-EQ", "NSE:BRITANNIA-EQ", "NSE:DIVISLAB-EQ",
-                "NSE:EICHERMOT-EQ", "NSE:HEROMOTOCO-EQ", "NSE:BAJAJ-AUTO-EQ", "NSE:M&M-EQ",
-                "NSE:BPCL-EQ", "NSE:IOC-EQ", "NSE:INDUSINDBK-EQ", "NSE:APOLLOHOSP-EQ",
-                "NSE:TATAMOTORS-EQ", "NSE:SHREECEM-EQ", "NSE:UPL-EQ", "NSE:TATACONSUM-EQ",
-                "NSE:SBILIFE-EQ", "NSE:HDFCLIFE-EQ"
-            ]
-            
-            # Add some additional high-volume stocks
-            additional_stocks = [
-                "NSE:ADANIENT-EQ", "NSE:ADANIGREEN-EQ", "NSE:VEDL-EQ", "NSE:GODREJCP-EQ",
-                "NSE:PIDILITIND-EQ", "NSE:DABUR-EQ", "NSE:MARICO-EQ", "NSE:COLPAL-EQ",
-                "NSE:BANKBARODA-EQ", "NSE:PNB-EQ", "NSE:CANBK-EQ", "NSE:UNIONBANK-EQ",
-                "NSE:SAIL-EQ", "NSE:NMDC-EQ", "NSE:MOIL-EQ", "NSE:NATIONALUM-EQ"
-            ]
-            
-            return nifty_50_symbols + additional_stocks
-            
-        elif segment == 'BSE':
-            # BSE top liquid stocks
-            return [
-                "BSE:RELIANCE-EQ", "BSE:TCS-EQ", "BSE:INFY-EQ", "BSE:HDFCBANK-EQ",
-                "BSE:ICICIBANK-EQ", "BSE:KOTAKBANK-EQ", "BSE:SBIN-EQ", "BSE:BHARTIARTL-EQ",
-                "BSE:ITC-EQ", "BSE:LT-EQ", "BSE:HCLTECH-EQ", "BSE:AXISBANK-EQ",
-                "BSE:MARUTI-EQ", "BSE:ASIANPAINT-EQ", "BSE:NESTLEIND-EQ", "BSE:ULTRACEMCO-EQ"
-            ]
-        else:  # MCX
-            # MCX commodities
-            return [
-                "MCX:GOLD-EQ", "MCX:SILVER-EQ", "MCX:CRUDE-EQ", "MCX:NATURALGAS-EQ",
-                "MCX:COPPER-EQ", "MCX:ZINC-EQ", "MCX:LEAD-EQ", "MCX:NICKEL-EQ"
-            ]
+        # Return Nifty 50 symbols as they are most liquid
+        nifty_50_symbols = [
+            "NSE:RELIANCE-EQ", "NSE:TCS-EQ", "NSE:INFY-EQ", "NSE:HDFCBANK-EQ",
+            "NSE:ICICIBANK-EQ", "NSE:KOTAKBANK-EQ", "NSE:SBIN-EQ", "NSE:BHARTIARTL-EQ",
+            "NSE:ITC-EQ", "NSE:LT-EQ", "NSE:HCLTECH-EQ", "NSE:AXISBANK-EQ",
+            "NSE:MARUTI-EQ", "NSE:ASIANPAINT-EQ", "NSE:NESTLEIND-EQ", "NSE:ULTRACEMCO-EQ",
+            "NSE:WIPRO-EQ", "NSE:TECHM-EQ", "NSE:POWERGRID-EQ", "NSE:NTPC-EQ",
+            "NSE:BAJFINANCE-EQ", "NSE:BAJAJFINSV-EQ", "NSE:HINDUNILVR-EQ", "NSE:TITAN-EQ",
+            "NSE:ONGC-EQ", "NSE:SUNPHARMA-EQ", "NSE:DRREDDY-EQ", "NSE:CIPLA-EQ",
+            "NSE:COALINDIA-EQ", "NSE:JSWSTEEL-EQ", "NSE:TATASTEEL-EQ", "NSE:HINDALCO-EQ",
+            "NSE:ADANIPORTS-EQ", "NSE:GRASIM-EQ", "NSE:BRITANNIA-EQ", "NSE:DIVISLAB-EQ",
+            "NSE:EICHERMOT-EQ", "NSE:HEROMOTOCO-EQ", "NSE:BAJAJ-AUTO-EQ", "NSE:M&M-EQ",
+            "NSE:BPCL-EQ", "NSE:IOC-EQ", "NSE:INDUSINDBK-EQ", "NSE:APOLLOHOSP-EQ",
+            "NSE:TATAMOTORS-EQ", "NSE:SHREECEM-EQ", "NSE:UPL-EQ", "NSE:TATACONSUM-EQ",
+            "NSE:SBILIFE-EQ", "NSE:HDFCLIFE-EQ"
+        ]
+        
+        # Add some additional high-volume stocks
+        additional_stocks = [
+            "NSE:ADANIENT-EQ", "NSE:ADANIGREEN-EQ", "NSE:VEDL-EQ", "NSE:GODREJCP-EQ",
+            "NSE:PIDILITIND-EQ", "NSE:DABUR-EQ", "NSE:MARICO-EQ", "NSE:COLPAL-EQ",
+            "NSE:BANKBARODA-EQ", "NSE:PNB-EQ", "NSE:CANBK-EQ", "NSE:UNIONBANK-EQ",
+            "NSE:SAIL-EQ", "NSE:NMDC-EQ", "NSE:MOIL-EQ", "NSE:NATIONALUM-EQ"
+        ]
+        
+        return nifty_50_symbols + additional_stocks
     
     except Exception as e:
         print(f"Error getting dynamic symbols: {str(e)}")
@@ -412,6 +419,9 @@ def get_nifty_fno_symbols(fyers):
     try:
         # Nifty 50 stocks with high F&O activity
         # nifty_fno_stocks = ["NSE:DALBHARAT-EQ"]
+        nifty_50 = [
+            "NSE:NIFTYBANK-INDEX,","NSE:NIFTY50-INDEX","NSE:ADANIENT-EQ","NSE:ADANIPORTS-EQ","NSE:APOLLOHOSP-EQ","NSE:ASIANPAINT-EQ","NSE:AXISBANK-EQ","NSE:BAJAJ-AUTO-EQ","NSE:BAJFINANCE-EQ","NSE:BAJAJFINSV-EQ","NSE:BEL-EQ","NSE:BPCL-EQ","NSE:BHARTIARTL-EQ","NSE:BRITANNIA-EQ","NSE:CIPLA-EQ","NSE:COALINDIA-EQ","NSE:DRREDDY-EQ","NSE:EICHERMOT-EQ","NSE:GRASIM-EQ","NSE:HCLTECH-EQ","NSE:HDFCBANK-EQ","NSE:HDFCLIFE-EQ","NSE:HEROMOTOCO-EQ","NSE:HINDALCO-EQ","NSE:HINDUNILVR-EQ","NSE:ICICIBANK-EQ","NSE:ITC-EQ","NSE:INDUSINDBK-EQ","NSE:INFY-EQ","NSE:JSWSTEEL-EQ","NSE:KOTAKBANK-EQ","NSE:LT-EQ","NSE:M&M-EQ","NSE:MARUTI-EQ","NSE:NTPC-EQ","NSE:NESTLEIND-EQ","NSE:ONGC-EQ","NSE:POWERGRID-EQ","NSE:RELIANCE-EQ","NSE:SBILIFE-EQ","NSE:SHRIRAMFIN-EQ","NSE:SBIN-EQ","NSE:SUNPHARMA-EQ","NSE:TCS-EQ","NSE:TATACONSUM-EQ","NSE:TATASTEEL-EQ","NSE:TECHM-EQ","NSE:TITAN-EQ","NSE:TRENT-EQ","NSE:ULTRACEMCO-EQ","NSE:WIPRO-EQ"
+        ]
         nifty_fno_stocks = [
             "NSE:PAGEIND-EQ","NSE:BOSCHLTD-EQ","NSE:SHREECEM-EQ","NSE:POWERINDIA-EQ","NSE:MARUTI-EQ","NSE:DIXON-EQ","NSE:SOLARINDS-EQ","NSE:ULTRACEMCO-EQ","NSE:BAJAJ-AUTO-EQ","NSE:MCX-EQ","NSE:OFSS-EQ","NSE:AMBER-EQ","NSE:APOLLOHOSP-EQ","NSE:POLYCAB-EQ","NSE:NUVAMA-EQ","NSE:EICHERMOT-EQ","NSE:KAYNES-EQ","NSE:DIVISLAB-EQ","NSE:BRITANNIA-EQ","NSE:PERSISTENT-EQ","NSE:INDIGO-EQ","NSE:LTIM-EQ","NSE:ALKEM-EQ","NSE:TATAELXSI-EQ","NSE:HDFCAMC-EQ","NSE:HEROMOTOCO-EQ","NSE:ABB-EQ","NSE:HAL-EQ","NSE:TRENT-EQ","NSE:DMART-EQ","NSE:CUMMINSIND-EQ","NSE:KEI-EQ","NSE:SUPREMEIND-EQ","NSE:LT-EQ","NSE:CAMS-EQ","NSE:TITAN-EQ","NSE:M&M-EQ","NSE:TVSMOTOR-EQ","NSE:PIIND-EQ","NSE:TORNTPHARM-EQ","NSE:MUTHOOTFIN-EQ","NSE:TIINDIA-EQ","NSE:SIEMENS-EQ","NSE:SRF-EQ","NSE:TCS-EQ","NSE:GRASIM-EQ","NSE:MPHASIS-EQ","NSE:MAZDOCK-EQ","NSE:HINDUNILVR-EQ","NSE:ANGELONE-EQ","NSE:ADANIENT-EQ","NSE:ASIANPAINT-EQ","NSE:BSE-EQ","NSE:MANKIND-EQ","NSE:GODREJPROP-EQ","NSE:COLPAL-EQ","NSE:KOTAKBANK-EQ","NSE:BAJAJFINSV-EQ","NSE:DALBHARAT-EQ","NSE:BHARTIARTL-EQ","NSE:BLUESTARCO-EQ","NSE:ICICIGI-EQ","NSE:LUPIN-EQ","NSE:SBILIFE-EQ","NSE:GLENMARK-EQ","NSE:COFORGE-EQ","NSE:APLAPOLLO-EQ","NSE:PRESTIGE-EQ","NSE:CHOLAFIN-EQ","NSE:OBEROIRLTY-EQ","NSE:SUNPHARMA-EQ","NSE:POLICYBZR-EQ","NSE:PHOENIXLTD-EQ","NSE:CDSL-EQ","NSE:CIPLA-EQ","NSE:BDL-EQ","NSE:INFY-EQ","NSE:HCLTECH-EQ","NSE:MFSL-EQ","NSE:PIDILITIND-EQ","NSE:HAVELLS-EQ","NSE:TECHM-EQ","NSE:RELIANCE-EQ","NSE:VOLTAS-EQ","NSE:ASTRAL-EQ","NSE:ADANIPORTS-EQ","NSE:NAUKRI-EQ","NSE:ICICIBANK-EQ","NSE:UNITDSPR-EQ","NSE:TORNTPOWER-EQ","NSE:PAYTM-EQ","NSE:BHARATFORG-EQ","NSE:DRREDDY-EQ","NSE:NESTLEIND-EQ","NSE:AXISBANK-EQ","NSE:UNOMINDA-EQ","NSE:360ONE-EQ","NSE:CYIENT-EQ","NSE:MAXHEALTH-EQ","NSE:KPITTECH-EQ","NSE:LODHA-EQ","NSE:TATACONSUM-EQ","NSE:KFINTECH-EQ","NSE:JSWSTEEL-EQ","NSE:GODREJCP-EQ","NSE:BAJFINANCE-EQ","NSE:AUROPHARMA-EQ","NSE:FORTIS-EQ","NSE:ADANIGREEN-EQ","NSE:JINDALSTEL-EQ","NSE:ZYDUSLIFE-EQ","NSE:HDFCBANK-EQ","NSE:ADANIENSOL-EQ","NSE:SBICARD-EQ","NSE:LAURUSLABS-EQ","NSE:PNBHOUSING-EQ","NSE:SBIN-EQ","NSE:LICI-EQ","NSE:TITAGARH-EQ","NSE:AUBANK-EQ","NSE:HINDALCO-EQ","NSE:INDIANB-EQ","NSE:DLF-EQ","NSE:INDUSINDBK-EQ","NSE:INDHOTEL-EQ","NSE:HDFCLIFE-EQ","NSE:MARICO-EQ","NSE:CGPOWER-EQ","NSE:SHRIRAMFIN-EQ","NSE:IRCTC-EQ","NSE:TATATECH-EQ","NSE:UPL-EQ","NSE:SYNGENE-EQ","NSE:ICICIPRULI-EQ","NSE:JUBLFOOD-EQ","NSE:PATANJALI-EQ","NSE:LICHSGFIN-EQ","NSE:PGEL-EQ","NSE:AMBUJACEM-EQ","NSE:CONCOR-EQ","NSE:JSWENERGY-EQ","NSE:DABUR-EQ","NSE:VEDL-EQ","NSE:KALYANKJIL-EQ","NSE:IIFL-EQ","NSE:HINDZINC-EQ","NSE:SONACOMS-EQ","NSE:DELHIVERY-EQ","NSE:VBL-EQ","NSE:HINDPETRO-EQ","NSE:BEL-EQ","NSE:OIL-EQ","NSE:ITC-EQ","NSE:TMPV-EQ","NSE:TATAPOWER-EQ","NSE:COALINDIA-EQ","NSE:PFC-EQ","NSE:EXIDEIND-EQ","NSE:RECLTD-EQ","NSE:INDUSTOWER-EQ","NSE:BIOCON-EQ","NSE:NTPC-EQ","NSE:BPCL-EQ","NSE:RVNL-EQ","NSE:ETERNAL-EQ","NSE:RBLBANK-EQ","NSE:ABCAPITAL-EQ","NSE:JIOFIN-EQ","NSE:CROMPTON-EQ","NSE:POWERGRID-EQ","NSE:PETRONET-EQ","NSE:MANAPPURAM-EQ","NSE:LTF-EQ","NSE:BANKBARODA-EQ","NSE:ONGC-EQ","NSE:NYKAA-EQ","NSE:WIPRO-EQ","NSE:NATIONALUM-EQ","NSE:BHEL-EQ","NSE:FEDERALBNK-EQ","NSE:HUDCO-EQ","NSE:IGL-EQ","NSE:NCC-EQ","NSE:PPLPHARMA-EQ","NSE:SAMMAANCAP-EQ","NSE:GAIL-EQ","NSE:TATASTEEL-EQ","NSE:BANDHANBNK-EQ","NSE:INOXWIND-EQ","NSE:IREDA-EQ","NSE:IOC-EQ","NSE:IEX-EQ","NSE:UNIONBANK-EQ","NSE:ASHOKLEY-EQ","NSE:BANKINDIA-EQ","NSE:SAIL-EQ","NSE:CANBK-EQ","NSE:IRFC-EQ","NSE:PNB-EQ","NSE:NBCC-EQ","NSE:MOTHERSON-EQ","NSE:GMRAIRPORT-EQ","NSE:NHPC-EQ","NSE:IDFCFIRSTB-EQ","NSE:HFCL-EQ","NSE:NMDC-EQ","NSE:SUZLON-EQ","NSE:YESBANK-EQ","NSE:IDEA-EQ"
         ]
@@ -434,11 +444,8 @@ def scan_regular(fyers, filters):
     Regular stock scanning logic using real Fyers API data
     """
     try:
-        # Get list of symbols based on market segment
-        segment = filters.get('segment', 'NSE')
-        
-        # Get dynamic symbol list from Fyers API
-        symbols = get_dynamic_symbols(fyers, segment)
+        # Get dynamic symbol list from Fyers API (no longer filtering by segment)
+        symbols = get_dynamic_symbols(fyers)
         
         results = []
         
@@ -692,23 +699,8 @@ def meets_criteria(price_data, filters):
     Check if stock meets regular scanning criteria
     """
     try:
-        # Price range check
-        if filters.get('minPrice') and price_data['price'] < float(filters['minPrice']):
-            return False
-        if filters.get('maxPrice') and price_data['price'] > float(filters['maxPrice']):
-            return False
-        
-        # Volume check
-        if filters.get('minVolume') and price_data['volume'] < int(filters['minVolume']):
-            return False
-        
-        # RSI check
-        rsi = price_data.get('rsi', 50)
-        if filters.get('minRSI') and rsi < int(filters['minRSI']):
-            return False
-        if filters.get('maxRSI') and rsi > int(filters['maxRSI']):
-            return False
-        
+        # Since we removed all filtering criteria, all stocks meet the criteria
+        # This function is kept for compatibility but no longer filters
         return True
     
     except Exception as e:

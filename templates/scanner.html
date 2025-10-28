@@ -27,82 +27,6 @@
             </div>
             <div class="card-body">
                 <form id="scannerForm">
-                    <!-- Market Segment -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Market Segment</label>
-                        <select class="form-select" id="segment">
-                            <option value="NSE">NSE</option>
-                            <option value="BSE">BSE</option>
-                            <option value="MCX">MCX</option>
-                        </select>
-                    </div>
-
-                    <!-- Price Range -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Price Range</label>
-                        <div class="row">
-                            <div class="col-6">
-                                <input type="number" class="form-control" id="minPrice" placeholder="Min ₹" min="0" step="0.01">
-                            </div>
-                            <div class="col-6">
-                                <input type="number" class="form-control" id="maxPrice" placeholder="Max ₹" min="0" step="0.01">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Volume -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Min Volume</label>
-                        <input type="number" class="form-control" id="minVolume" placeholder="Min Volume" min="0">
-                    </div>
-
-                    <!-- Market Cap -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Market Cap</label>
-                        <select class="form-select" id="marketCap">
-                            <option value="">All</option>
-                            <option value="large">Large Cap (>20,000 Cr)</option>
-                            <option value="mid">Mid Cap (5,000-20,000 Cr)</option>
-                            <option value="small">Small Cap (<5,000 Cr)</option>
-                        </select>
-                    </div>
-
-                    <!-- Technical Indicators -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Technical Patterns</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="bullishPattern">
-                            <label class="form-check-label" for="bullishPattern">
-                                Bullish Patterns
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="bearishPattern">
-                            <label class="form-check-label" for="bearishPattern">
-                                Bearish Patterns
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="breakoutPattern">
-                            <label class="form-check-label" for="breakoutPattern">
-                                Breakout Patterns
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- RSI Range -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">RSI Range</label>
-                        <div class="row">
-                            <div class="col-6">
-                                <input type="number" class="form-control" id="minRSI" placeholder="Min RSI" min="0" max="100">
-                            </div>
-                            <div class="col-6">
-                                <input type="number" class="form-control" id="maxRSI" placeholder="Max RSI" min="0" max="100">
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- One Hour Setup Strategy -->
                     <div class="mb-3">
                         <div class="form-check">
@@ -113,6 +37,61 @@
                         </div>
                         
                         <div id="oneHourFilters" class="mt-2 d-none">
+                            <!-- Stock Selection -->
+                            <div class="mb-2">
+                                <label class="form-label small">Stock Selection</label>
+                                <select class="form-select form-select-sm" id="stockSelection">
+                                    <option value="all">All Stocks (Nifty 50 + F&O)</option>
+                                    <option value="nifty50">Nifty 50 Only</option>
+                                    <option value="fno">F&O Stocks Only</option>
+                                    <option value="custom">Select Specific Stocks</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Custom Stock Selection (Multi-select) -->
+                            <div id="customStockDiv" class="mb-2 d-none">
+                                <label class="form-label small">Select Stocks</label>
+                                <select class="form-select form-select-sm" id="customStocks" multiple size="6">
+                                    <!-- Popular stocks for quick selection -->
+                                    <optgroup label="Banking">
+                                        <option value="NSE:HDFCBANK-EQ">HDFC Bank</option>
+                                        <option value="NSE:ICICIBANK-EQ">ICICI Bank</option>
+                                        <option value="NSE:KOTAKBANK-EQ">Kotak Bank</option>
+                                        <option value="NSE:SBIN-EQ">SBI</option>
+                                        <option value="NSE:AXISBANK-EQ">Axis Bank</option>
+                                    </optgroup>
+                                    <optgroup label="IT">
+                                        <option value="NSE:TCS-EQ">TCS</option>
+                                        <option value="NSE:INFY-EQ">Infosys</option>
+                                        <option value="NSE:HCLTECH-EQ">HCL Tech</option>
+                                        <option value="NSE:TECHM-EQ">Tech Mahindra</option>
+                                        <option value="NSE:WIPRO-EQ">Wipro</option>
+                                    </optgroup>
+                                    <optgroup label="Auto">
+                                        <option value="NSE:MARUTI-EQ">Maruti</option>
+                                        <option value="NSE:M&M-EQ">M&M</option>
+                                        <option value="NSE:BAJAJ-AUTO-EQ">Bajaj Auto</option>
+                                        <option value="NSE:HEROMOTOCO-EQ">Hero MotoCorp</option>
+                                        <option value="NSE:TVSMOTOR-EQ">TVS Motor</option>
+                                    </optgroup>
+                                    <optgroup label="Pharma">
+                                        <option value="NSE:SUNPHARMA-EQ">Sun Pharma</option>
+                                        <option value="NSE:CIPLA-EQ">Cipla</option>
+                                        <option value="NSE:DRREDDY-EQ">Dr Reddy's</option>
+                                        <option value="NSE:DIVISLAB-EQ">Divi's Lab</option>
+                                        <option value="NSE:LUPIN-EQ">Lupin</option>
+                                    </optgroup>
+                                    <optgroup label="Energy">
+                                        <option value="NSE:RELIANCE-EQ">Reliance</option>
+                                        <option value="NSE:ONGC-EQ">ONGC</option>
+                                        <option value="NSE:BPCL-EQ">BPCL</option>
+                                        <option value="NSE:IOC-EQ">IOC</option>
+                                        <option value="NSE:NTPC-EQ">NTPC</option>
+                                    </optgroup>
+                                </select>
+                                <small class="text-muted">Hold Ctrl/Cmd to select multiple stocks</small>
+                            </div>
+                            
                             <!-- Previous Day Close -->
                             <div class="mb-2">
                                 <label class="form-label small">Previous Day Close</label>
@@ -231,32 +210,12 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-2 mb-2">
-                        <button class="btn btn-outline-primary w-100" onclick="applyPreset('momentum')">
-                            <i class="fas fa-rocket me-1"></i>Momentum Stocks
-                        </button>
-                    </div>
-                    <div class="col-md-2 mb-2">
-                        <button class="btn btn-outline-success w-100" onclick="applyPreset('oversold')">
-                            <i class="fas fa-arrow-down me-1"></i>Oversold Stocks
-                        </button>
-                    </div>
-                    <div class="col-md-2 mb-2">
-                        <button class="btn btn-outline-danger w-100" onclick="applyPreset('overbought')">
-                            <i class="fas fa-arrow-up me-1"></i>Overbought Stocks
-                        </button>
-                    </div>
-                    <div class="col-md-2 mb-2">
-                        <button class="btn btn-outline-info w-100" onclick="applyPreset('breakout')">
-                            <i class="fas fa-chart-line me-1"></i>Breakout Stocks
-                        </button>
-                    </div>
-                    <div class="col-md-2 mb-2">
+                    <div class="col-md-3 mb-2">
                         <button class="btn btn-outline-warning w-100" onclick="applyPreset('oneHourSetup')">
                             <i class="fas fa-clock me-1"></i>One Hour Setup
                         </button>
                     </div>
-                    <div class="col-md-2 mb-2">
+                    <div class="col-md-3 mb-2">
                         <button class="btn btn-outline-secondary w-100" onclick="showPaperTrading()">
                             <i class="fas fa-chart-area me-1"></i>Paper Trading
                         </button>
@@ -272,6 +231,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const scannerForm = document.getElementById('scannerForm');
     const oneHourSetup = document.getElementById('oneHourSetup');
     const oneHourFilters = document.getElementById('oneHourFilters');
+    const stockSelection = document.getElementById('stockSelection');
+    const customStockSelection = document.getElementById('customStockDiv');
     
     // Toggle One Hour Setup filters
     oneHourSetup.addEventListener('change', function() {
@@ -281,6 +242,17 @@ document.addEventListener('DOMContentLoaded', function() {
             oneHourFilters.classList.add('d-none');
         }
     });
+    
+    // Toggle custom stock selection
+    if (stockSelection) {
+        stockSelection.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                customStockSelection.classList.remove('d-none');
+            } else {
+                customStockSelection.classList.add('d-none');
+            }
+        });
+    }
     
     scannerForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -301,21 +273,13 @@ function performScan() {
     
     // Collect form data
     const formData = {
-        segment: document.getElementById('segment').value,
-        minPrice: document.getElementById('minPrice').value,
-        maxPrice: document.getElementById('maxPrice').value,
-        minVolume: document.getElementById('minVolume').value,
-        marketCap: document.getElementById('marketCap').value,
-        bullishPattern: document.getElementById('bullishPattern').checked,
-        bearishPattern: document.getElementById('bearishPattern').checked,
-        breakoutPattern: document.getElementById('breakoutPattern').checked,
-        minRSI: document.getElementById('minRSI').value,
-        maxRSI: document.getElementById('maxRSI').value,
         oneHourSetup: document.getElementById('oneHourSetup').checked,
         prevDayClose: document.getElementById('prevDayClose')?.value || '',
         stockFlatTolerance: document.getElementById('stockFlatTolerance')?.value || 1,
         indexFlatTolerance: document.getElementById('indexFlatTolerance')?.value || 30,
-        highLiquidity: document.getElementById('highLiquidity')?.checked || false
+        highLiquidity: document.getElementById('highLiquidity')?.checked || false,
+        stockSelection: document.getElementById('stockSelection')?.value || 'all',
+        selectedStocks: getSelectedStocks()
     };
     
     // Store scan data for CSV export
@@ -520,28 +484,10 @@ function applyPreset(presetType) {
     resetFilters();
     
     switch(presetType) {
-        case 'momentum':
-            document.getElementById('minVolume').value = '100000';
-            document.getElementById('minRSI').value = '60';
-            document.getElementById('maxRSI').value = '80';
-            document.getElementById('bullishPattern').checked = true;
-            break;
-        case 'oversold':
-            document.getElementById('maxRSI').value = '30';
-            break;
-        case 'overbought':
-            document.getElementById('minRSI').value = '70';
-            break;
-        case 'breakout':
-            document.getElementById('minVolume').value = '200000';
-            document.getElementById('breakoutPattern').checked = true;
-            break;
         case 'oneHourSetup':
             document.getElementById('oneHourSetup').checked = true;
             document.getElementById('oneHourFilters').classList.remove('d-none');
             document.getElementById('highLiquidity').checked = true;
-            document.getElementById('segment').value = 'NSE';
-            document.getElementById('minVolume').value = '500000';
             break;
     }
     
@@ -681,6 +627,21 @@ function showPaperTrading() {
     tradeHistory += `Total P&L: Rs.${totalPnL.toFixed(2)}`;
     
     alert(tradeHistory);
+}
+
+function getSelectedStocks() {
+    const stockSelection = document.getElementById('stockSelection')?.value || 'all';
+    
+    if (stockSelection === 'custom') {
+        const selectedStocks = [];
+        const selectedOptions = document.querySelectorAll('#customStocks option:checked');
+        selectedOptions.forEach(option => {
+            selectedStocks.push(option.value);
+        });
+        return selectedStocks;
+    }
+    
+    return []; // Return empty array for non-custom selections
 }
 </script>
 
